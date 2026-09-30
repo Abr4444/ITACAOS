@@ -6,9 +6,9 @@
  * @Date: 28/09/2026
  *
  ************************************************/
-
+#define _GNU_SOURCE
 #include "odysseusConfig.h"
-
+#include "io.h"
 /************************************************
  *
  * @Name: printConfig

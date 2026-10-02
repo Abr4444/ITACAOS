@@ -3,30 +3,13 @@
  * @File: island.c
  * @Purpose: Island process (a port). Usage: ./island <config.dat> <stock.db>
  * @Author: Stefan Radulescu, Albert Baiget Rodulfo
- * @Date: 30/09/2026
+ * @Date: 02/10/2026
  *
  ************************************************/
 #define _GNU_SOURCE
 
-#include <signal.h>
-
 #include "islandConfig.h"
-
-volatile int gnStop = 0;
-
-/************************************************
- *
- * @Name: closePort
- * @Def: SIGINT handler: only raises the stop flag, main does the cleanup.
- * @Arg: In: nSignum = signal received
- * @Ret: -
- *
- ************************************************/
-void closePort(int nSignum) {
-
-    (void) nSignum;
-    gnStop = 1;
-}
+#include "interrupt.h"
 
 int main(int argc, char *argv[]) {
 
@@ -41,6 +24,11 @@ int main(int argc, char *argv[]) {
     if (-1 == loadIslandConfig(argv[1], argv[2], &stConfig)) {
         return 1;
     }
+    if (-1 == setUpInterrupt()) {
+        printError("Error: could not install the CTRL+C handler.\n");
+        freeIslandConfig(&stConfig);
+        return 1;
+    }
 
     if (1 == stConfig.nCapacity) {
         psShips = "ship";
@@ -52,7 +40,7 @@ int main(int argc, char *argv[]) {
         free(psMessage);
     }
 
-    signal(SIGINT, closePort);
+    // pause() sleeps without using CPU until a signal arrives
     while (0 == gnStop) {
         pause();
     }

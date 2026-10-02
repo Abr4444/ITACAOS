@@ -4,57 +4,44 @@
  * @Purpose: Ithaca process (central server).
  *           Usage: ./ithaca <config.dat> <voyages.dat>
  * @Author: Stefan Radulescu, Albert Baiget Rodulfo
- * @Date: 28/09/2026
+ * @Date: 02/10/2026
  *
  ************************************************/
 #define _GNU_SOURCE
-#include <signal.h>
 
 #include "ithacaConfig.h"
-
-
-int stop = 0;
-
-/************************************************
- *
- * @Name: closeHarbor
- * @Def: SIGINT handler: only raises the stop flag, main does the cleanup.
- * @Arg: In: signum = signal received
- * @Ret: -
- *
- ************************************************/
-void closeHarbor(int signum) {
-
-    (void) signum;
-    stop = 1;
-}
+#include "interrupt.h"
 
 int main(int argc, char *argv[]) {
 
-    IthacaConfig config;
-    char *message = NULL;
+    IthacaConfig stConfig;
+    char *psMessage = NULL;
 
     if (3 != argc) {
         printError("Usage: ./ithaca <config.dat> <voyages.dat>\n");
         return 1;
     }
-    if (-1 == loadIthacaConfig(argv[1], argv[2], &config)) {
+    if (-1 == loadIthacaConfig(argv[1], argv[2], &stConfig)) {
+        return 1;
+    }
+    if (-1 == setUpInterrupt()) {
+        printError("Error: could not install the CTRL+C handler.\n");
+        freeIthacaConfig(&stConfig);
         return 1;
     }
 
-    if (-1 != asprintf(&message, "Ithaca initialized. %d voyages loaded.\nWaiting for Odysseus...\n",
-            config.numVoyages)) {
-        printString(message);
-        free(message);
+    if (-1 != asprintf(&psMessage, "Ithaca initialized. %d voyages loaded.\nWaiting for Odysseus...\n",
+            stConfig.numVoyages)) {
+        printString(psMessage);
+        free(psMessage);
     }
 
     // pause() sleeps without using CPU until a signal arrives
-    signal(SIGINT, closeHarbor);
-    while (0 == stop) {
+    while (0 == gnStop) {
         pause();
     }
 
     printString("\nIthaca closes the harbor.\n");
-    freeIthacaConfig(&config);
+    freeIthacaConfig(&stConfig);
     return 0;
 }

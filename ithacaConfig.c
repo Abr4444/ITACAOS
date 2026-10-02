@@ -35,7 +35,6 @@ static int loadVoyages(char *path, IthacaConfig *config) {
 
     line = readLine(fd);
     while (NULL != line) {
-        // Grow the array by one; a temporary pointer keeps the old array if realloc fails
         more = realloc(config->voyages, (config->numVoyages + 1) * sizeof(Voyage));
         if (NULL == more) {
             printError("Error: not enough memory for the voyages.\n");

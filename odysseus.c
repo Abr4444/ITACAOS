@@ -93,7 +93,6 @@ int main(int argc, char *argv[]) {
     }
     runTerminal();
 
-    printString("\nOdysseus drops anchor. Goodbye.\n");
     freeOdysseusConfig(&stConfig);
     return 0;
 }

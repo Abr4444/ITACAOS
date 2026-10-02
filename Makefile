@@ -12,7 +12,7 @@ else
 endif
 
 ITHACA_SRC   = ithaca.c ithacaConfig.c io.c interrupt.c
-ODYSSEUS_SRC = odysseus.c odysseusConfig.c io.c interrupt.c
+ODYSSEUS_SRC = odysseus.c odysseusConfig.c io.c interrupt.c terminal.c
 ISLAND_SRC   = island.c islandConfig.c io.c interrupt.c
 
 ITHACA_OBJ   = $(ITHACA_SRC:.c=.o)

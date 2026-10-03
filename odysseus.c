@@ -6,49 +6,36 @@
  * @Date: 02/10/2026
  *
  ************************************************/
-#define _GNU_SOURCE
 
 #include "odysseusConfig.h"
 #include "terminal.h"
-#include "interrupt.h"
+#include <signal.h>
 
 #define PROMPT "$ "
 
+OdysseusConfig gstConfig;
+
 /************************************************
  *
- * @Name: showResult
- * @Def: Tells the user how the command was parsed (Phase 1 only
- *       checks syntax, it does not run the command yet).
- * @Arg: In: nResult = value returned by parseCommand
- *       In: pstCommand = parsed command
+ * @Name: handleInterrupt
+ * @Def: SIGINT (CTRL+C) handler: frees the configuration and exits.
+ * @Arg: In: nSignal = signal received (unused)
  * @Ret: -
  *
  ************************************************/
-static void showResult(int nResult, Command *pstCommand) {
+void handleInterrupt(int nSignal) {
 
-    switch (nResult) {
-        case PARSE_OK:
-            printString("Command OK\n");
-            break;
-
-        case PARSE_BAD_SYNTAX:
-            printString(pstCommand->psUsage);
-            break;
-
-        case PARSE_UNKNOWN:
-            printString("Unknown command\n");
-            break;
-
-        default:
-            // PARSE_EMPTY: a blank line just shows the prompt again
-            break;
-    }
+    (void) nSignal;
+    printString("\n");
+    freeOdysseusConfig(&gstConfig);
+    exit(0);
 }
 
 /************************************************
  *
  * @Name: runTerminal
  * @Def: Reads and parses commands until CTRL+C or end of input.
+ *       Phase 1 only checks the syntax, it does not run the command yet.
  * @Arg: -
  * @Ret: -
  *
@@ -57,42 +44,46 @@ static void runTerminal(void) {
 
     Command stCommand;
     char *psLine = NULL;
-    int nResult = 0;
 
     printString(PROMPT);
-    // readInputLine fails on CTRL+C (EINTR), end of input or lack of memory
     while (0 == readInputLine(STDIN_FILENO, &psLine)) {
-        nResult = parseCommand(psLine, &stCommand);
-        showResult(nResult, &stCommand);
+        switch (parseCommand(psLine, &stCommand)) {
+            case PARSE_OK:
+                printString("Command OK\n");
+                break;
+            case PARSE_BAD_SYNTAX:
+                printString(stCommand.psUsage);
+                break;
+            case PARSE_UNKNOWN:
+                printString("Unknown command\n");
+                break;
+            default:
+                break;
+        }
         free(psLine);
         printString(PROMPT);
     }
+    printString("\n");
 }
 
 int main(int argc, char *argv[]) {
-
-    OdysseusConfig stConfig;
-    char *psMessage = NULL;
 
     if (2 != argc) {
         printError("Usage: ./odysseus <config.dat>\n");
         return 1;
     }
-    if (-1 == loadOdysseusConfig(argv[1], &stConfig)) {
+    if (-1 == loadOdysseusConfig(argv[1], &gstConfig)) {
         return 1;
     }
-    if (-1 == setUpInterrupt()) {
+    if (SIG_ERR == signal(SIGINT, handleInterrupt)) {
         printError("Error: could not install the CTRL+C handler.\n");
-        freeOdysseusConfig(&stConfig);
+        freeOdysseusConfig(&gstConfig);
         return 1;
     }
 
-    if (-1 != asprintf(&psMessage, "Welcome aboard, %s. Type a command.\n", stConfig.name)) {
-        printString(psMessage);
-        free(psMessage);
-    }
+    printFormat("Welcome aboard, %s. Type a command.\n", gstConfig.name);
     runTerminal();
 
-    freeOdysseusConfig(&stConfig);
+    freeOdysseusConfig(&gstConfig);
     return 0;
 }

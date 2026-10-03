@@ -4,13 +4,14 @@
  * @Purpose: Ithaca process (central server).
  *           Usage: ./ithaca <config.dat> <voyages.dat>
  * @Author: Stefan Radulescu, Albert Baiget Rodulfo
- * @Date: 02/10/2026
+ * @Date: 03/10/2026
  *
  ************************************************/
 
 #include "ithacaConfig.h"
 #include <signal.h>
 
+// Raised by CTRL+C. The only global of this process.
 int gnStop = 0;
 
 /************************************************
@@ -30,6 +31,7 @@ void handleInterrupt(int nSignal) {
 int main(int argc, char *argv[]) {
 
     IthacaConfig stConfig;
+    char *psMessage = NULL;
 
     if (3 != argc) {
         printError("Usage: ./ithaca <config.dat> <voyages.dat>\n");
@@ -44,7 +46,11 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    asprintf("Ithaca initialized. %d voyages loaded.\nWaiting for Odysseus...\n", stConfig.numVoyages);
+    if (-1 != asprintf(&psMessage, "Ithaca initialized. %d voyages loaded.\nWaiting for Odysseus...\n", stConfig.nNumVoyages)) {
+        printString(psMessage);
+        free(psMessage);
+    }
+
     while (0 == gnStop) {
         pause();
     }

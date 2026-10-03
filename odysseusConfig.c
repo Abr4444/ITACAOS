@@ -15,58 +15,63 @@
  * @Name: loadOdysseusConfig
  * @Def: Reads odysseus.dat into an OdysseusConfig. The file format is
  *       assumed correct (p.18).
- * @Arg: In: path = path of the config file
- *       Out: config = the loaded configuration
+ * @Arg: In: psPath = path of the config file
+ *       Out: pstConfig = the loaded configuration
  * @Ret: 0 on success, -1 on error (nothing is left allocated).
  *
  ************************************************/
-int loadOdysseusConfig(char *path, OdysseusConfig *config) {
+int loadOdysseusConfig(char *psPath, OdysseusConfig *pstConfig) {
 
-    char *line = NULL;
-    int fd = 0;
+    char *psLine = NULL;
+    int nFd = 0;
     int i = 0;
 
-    fd = open(path, O_RDONLY);
-    if (-1 == fd) {
+    memset(pstConfig, 0, sizeof(OdysseusConfig));
+
+    nFd = open(psPath, O_RDONLY);
+    if (-1 == nFd) {
         printError("Error: could not open the Odysseus config file.\n");
         return -1;
     }
 
-    config->name = readLine(fd);
-    config->folder = readLine(fd);
+    pstConfig->psName = readLine(nFd);
+    pstConfig->psFolder = readLine(nFd);
 
-    config->ithacaIp = readLine(fd);
-    strtok(config->ithacaIp, " ");
-    config->ithacaPort = atoi(strtok(NULL, " "));
+    pstConfig->psIthacaIp = readLine(nFd);
+    strtok(pstConfig->psIthacaIp, " ");
+    pstConfig->nIthacaPort = atoi(strtok(NULL, " "));
 
-    config->aeaeaName = readLine(fd);
-    strtok(config->aeaeaName, " ");
-    config->aeaeaIp = strtok(NULL, " ");
-    config->aeaeaPort = atoi(strtok(NULL, " "));
+    pstConfig->psAeaeaName = readLine(nFd);
+    strtok(pstConfig->psAeaeaName, " ");
+    pstConfig->psAeaeaIp = strtok(NULL, " ");
+    pstConfig->nAeaeaPort = atoi(strtok(NULL, " "));
 
-    line = readLine(fd);
-    config->gold = atoi(line);
-    free(line);
+    psLine = readLine(nFd);
+    pstConfig->nGold = atoi(psLine);
+    free(psLine);
 
-    line = readLine(fd);
-    config->numCargo = atoi(line);
-    free(line);
+    psLine = readLine(nFd);
+    pstConfig->nNumCargo = atoi(psLine);
+    free(psLine);
 
-    config->cargo = malloc(config->numCargo * sizeof(Cargo));
-    if (NULL == config->cargo) {
-        printError("Error: not enough memory for the cargo.\n");
-        config->numCargo = 0;
-        freeOdysseusConfig(config);
-        close(fd);
-        return -1;
+    // malloc(0) may return NULL, so an empty hold allocates nothing
+    if (0 < pstConfig->nNumCargo) {
+        pstConfig->pstCargo = malloc(pstConfig->nNumCargo * sizeof(Cargo));
+        if (NULL == pstConfig->pstCargo) {
+            printError("Error: not enough memory for the cargo.\n");
+            pstConfig->nNumCargo = 0;
+            freeOdysseusConfig(pstConfig);
+            close(nFd);
+            return -1;
+        }
     }
-    for (i = 0; i < config->numCargo; i++) {
-        config->cargo[i].name = readLine(fd);
-        strtok(config->cargo[i].name, " ");
-        config->cargo[i].kg = atoi(strtok(NULL, " "));
+    for (i = 0; i < pstConfig->nNumCargo; i++) {
+        pstConfig->pstCargo[i].psName = readLine(nFd);
+        strtok(pstConfig->pstCargo[i].psName, " ");
+        pstConfig->pstCargo[i].nKg = atoi(strtok(NULL, " "));
     }
 
-    close(fd);
+    close(nFd);
     return 0;
 }
 
@@ -74,20 +79,20 @@ int loadOdysseusConfig(char *path, OdysseusConfig *config) {
  *
  * @Name: freeOdysseusConfig
  * @Def: Frees everything loadOdysseusConfig allocated.
- * @Arg: In/Out: config = configuration to free
+ * @Arg: In/Out: pstConfig = configuration to free
  * @Ret: -
  *
  ************************************************/
-void freeOdysseusConfig(OdysseusConfig *config) {
+void freeOdysseusConfig(OdysseusConfig *pstConfig) {
 
     int i = 0;
 
-    free(config->name);
-    free(config->folder);
-    free(config->ithacaIp);
-    free(config->aeaeaName);
-    for (i = 0; i < config->numCargo; i++) {
-        free(config->cargo[i].name);
+    free(pstConfig->psName);
+    free(pstConfig->psFolder);
+    free(pstConfig->psIthacaIp);
+    free(pstConfig->psAeaeaName);
+    for (i = 0; i < pstConfig->nNumCargo; i++) {
+        free(pstConfig->pstCargo[i].psName);
     }
-    free(config->cargo);
+    free(pstConfig->pstCargo);
 }

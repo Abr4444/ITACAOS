@@ -48,15 +48,18 @@ int printError(char *psText) {
 char *readLine(int nFd) {
 
     char *psLine = NULL;
+    char *psMore = NULL;
     char cChar = ' ';
     int nLength = 0;
 
     while (1 == read(nFd, &cChar, 1) && '\n' != cChar) {
-        psLine = realloc(psLine, nLength + 2);
-        if (NULL == psLine) {
+        psMore = realloc(psLine, nLength + 2);
+        if (NULL == psMore) {
             printError("Error: not enough memory to read a line.\n");
+            free(psLine);
             return NULL;
         }
+        psLine = psMore;
         psLine[nLength] = cChar;
         nLength++;
     }
@@ -75,7 +78,7 @@ char *readLine(int nFd) {
  *       Unlike readLine, an empty line is a valid (empty) string.
  * @Arg: In: nFd = file descriptor to read from
  *       Out: ppsLine = malloc'd line that the caller must free
- * @Ret: 0 on success, -1 on end of input, error, CTRL+C (EINTR)
+ * @Ret: 0 on success, -1 on end of input, error (CTRL+C closes stdin)
  *       or lack of memory (nothing is left allocated).
  *
  ************************************************/
@@ -106,7 +109,6 @@ int readInputLine(int nFd, char **ppsLine) {
         nRead = read(nFd, &cChar, 1);
     }
  
-    // 0 means end of input, -1 an error or CTRL+C
     if (1 != nRead) {
         free(psLine);
         return -1;

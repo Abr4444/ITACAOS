@@ -14,23 +14,23 @@
 #include "io.h"
 
 typedef struct {
-    int id;               // line number in voyages.dat, starting at 1
-    char *object;         // the whole line after strtok; file and destination point inside it
-    char *file;
-    char *destination;
-    int reward;
+    int nId;
+    char *psObject;
+    char *psFile;
+    char *psDestination;
+    int nReward;
 } Voyage;
 
 typedef struct {
-    char *name;
-    char *folder;
-    char *ip;
-    int port;
-    int numVoyages;
-    Voyage *voyages;
+    char *psName;
+    char *psFolder;
+    char *psIp;
+    int nPort;
+    int nNumVoyages;
+    Voyage *pstVoyages;
 } IthacaConfig;
 
-int loadIthacaConfig(char *configPath, char *voyagesPath, IthacaConfig *config);
-void freeIthacaConfig(IthacaConfig *config);
+int loadIthacaConfig(char *psConfigPath, char *psVoyagesPath, IthacaConfig *pstConfig);
+void freeIthacaConfig(IthacaConfig *pstConfig);
 
 #endif

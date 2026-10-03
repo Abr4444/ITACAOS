@@ -11,28 +11,27 @@
  *
  ************************************************/
 
-
 #include "io.h"
 
 typedef struct {
-    char *name;
-    int kg;
+    char *psName;
+    int nKg;
 } Cargo;
 
 typedef struct {
-    char *name;
-    char *folder;
-    char *ithacaIp;
-    int ithacaPort;
-    char *aeaeaName;      // the whole "Aeaea <IP> <PORT>" line after strtok
-    char *aeaeaIp;        // points inside aeaeaName's memory, never freed on its own
-    int aeaeaPort;
-    int gold;
-    int numCargo;
-    Cargo *cargo;
+    char *psName;
+    char *psFolder;
+    char *psIthacaIp;
+    int nIthacaPort;
+    char *psAeaeaName;
+    char *psAeaeaIp;
+    int nAeaeaPort;
+    int nGold;
+    int nNumCargo;
+    Cargo *pstCargo;
 } OdysseusConfig;
 
-int loadOdysseusConfig(char *path, OdysseusConfig *config);
-void freeOdysseusConfig(OdysseusConfig *config);
+int loadOdysseusConfig(char *psPath, OdysseusConfig *pstConfig);
+void freeOdysseusConfig(OdysseusConfig *pstConfig);
 
 #endif

@@ -1,5 +1,5 @@
 CC      = gcc
-CFLAGS  = -Wall -Wextra -g
+CFLAGS  = -Wall -Wextra -g -D_GNU_SOURCE
 
 # sphragis.o is a Linux ELF — island only builds on Linux
 UNAME := $(shell uname)
@@ -11,9 +11,9 @@ else
     ISLAND_LDFLAGS =
 endif
 
-ITHACA_SRC   = ithaca.c ithacaConfig.c io.c interrupt.c
-ODYSSEUS_SRC = odysseus.c odysseusConfig.c io.c interrupt.c terminal.c
-ISLAND_SRC   = island.c islandConfig.c io.c interrupt.c
+ITHACA_SRC   = ithaca.c ithacaConfig.c io.c
+ODYSSEUS_SRC = odysseus.c odysseusConfig.c io.c terminal.c
+ISLAND_SRC   = island.c islandConfig.c io.c
 
 ITHACA_OBJ   = $(ITHACA_SRC:.c=.o)
 ODYSSEUS_OBJ = $(ODYSSEUS_SRC:.c=.o)

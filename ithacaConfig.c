@@ -15,48 +15,48 @@
  * @Name: loadVoyages
  * @Def: Reads every "<OBJECT> <FILE> <DESTINATION> <REWARD>" line of
  *       voyages.dat and gives each voyage its line number as ID.
- * @Arg: In: path = path of voyages.dat
- *       Out: config = gets voyages and numVoyages
+ * @Arg: In: psPath = path of voyages.dat
+ *       Out: pstConfig = gets pstVoyages and nNumVoyages
  * @Ret: 0 on success, -1 on error.
  *
  ************************************************/
-static int loadVoyages(char *path, IthacaConfig *config) {
+static int loadVoyages(char *psPath, IthacaConfig *pstConfig) {
 
-    Voyage *more = NULL;
-    char *line = NULL;
-    int fd = 0;
-    int n = 0;
+    Voyage *pstMore = NULL;
+    char *psLine = NULL;
+    int nFd = 0;
+    int nIndex = 0;
 
-    fd = open(path, O_RDONLY);
-    if (-1 == fd) {
+    nFd = open(psPath, O_RDONLY);
+    if (-1 == nFd) {
         printError("Error: could not open the voyages file.\n");
         return -1;
     }
 
-    line = readLine(fd);
-    while (NULL != line) {
-        more = realloc(config->voyages, (config->numVoyages + 1) * sizeof(Voyage));
-        if (NULL == more) {
+    psLine = readLine(nFd);
+    while (NULL != psLine) {
+        pstMore = realloc(pstConfig->pstVoyages, (pstConfig->nNumVoyages + 1) * sizeof(Voyage));
+        if (NULL == pstMore) {
             printError("Error: not enough memory for the voyages.\n");
-            free(line);
-            close(fd);
+            free(psLine);
+            close(nFd);
             return -1;
         }
-        config->voyages = more;
+        pstConfig->pstVoyages = pstMore;
 
-        n = config->numVoyages;
-        config->voyages[n].id = n + 1;
-        config->voyages[n].object = line;
-        strtok(line, " ");
-        config->voyages[n].file = strtok(NULL, " ");
-        config->voyages[n].destination = strtok(NULL, " ");
-        config->voyages[n].reward = atoi(strtok(NULL, " "));
-        config->numVoyages++;
+        nIndex = pstConfig->nNumVoyages;
+        pstConfig->pstVoyages[nIndex].nId = nIndex + 1;
+        pstConfig->pstVoyages[nIndex].psObject = psLine;
+        strtok(psLine, " ");
+        pstConfig->pstVoyages[nIndex].psFile = strtok(NULL, " ");
+        pstConfig->pstVoyages[nIndex].psDestination = strtok(NULL, " ");
+        pstConfig->pstVoyages[nIndex].nReward = atoi(strtok(NULL, " "));
+        pstConfig->nNumVoyages++;
 
-        line = readLine(fd);
+        psLine = readLine(nFd);
     }
 
-    close(fd);
+    close(nFd);
     return 0;
 }
 
@@ -64,33 +64,32 @@ static int loadVoyages(char *path, IthacaConfig *config) {
  *
  * @Name: loadIthacaConfig
  * @Def: Reads ithaca.dat and voyages.dat. The format is assumed correct (p.18).
- * @Arg: In: configPath = path of ithaca.dat
- *       In: voyagesPath = path of voyages.dat
- *       Out: config = the loaded configuration
+ * @Arg: In: psConfigPath = path of ithaca.dat
+ *       In: psVoyagesPath = path of voyages.dat
+ *       Out: pstConfig = the loaded configuration
  * @Ret: 0 on success, -1 on error (nothing is left allocated).
  *
  ************************************************/
-int loadIthacaConfig(char *configPath, char *voyagesPath, IthacaConfig *config) {
+int loadIthacaConfig(char *psConfigPath, char *psVoyagesPath, IthacaConfig *pstConfig) {
 
-    int fd = 0;
+    int nFd = 0;
 
-    config->numVoyages = 0;
-    config->voyages = NULL;
+    memset(pstConfig, 0, sizeof(IthacaConfig));
 
-    fd = open(configPath, O_RDONLY);
-    if (-1 == fd) {
+    nFd = open(psConfigPath, O_RDONLY);
+    if (-1 == nFd) {
         printError("Error: could not open the Ithaca config file.\n");
         return -1;
     }
-    config->name = readLine(fd);
-    config->folder = readLine(fd);
-    config->ip = readLine(fd);
-    strtok(config->ip, " ");
-    config->port = atoi(strtok(NULL, " "));
-    close(fd);
+    pstConfig->psName = readLine(nFd);
+    pstConfig->psFolder = readLine(nFd);
+    pstConfig->psIp = readLine(nFd);
+    strtok(pstConfig->psIp, " ");
+    pstConfig->nPort = atoi(strtok(NULL, " "));
+    close(nFd);
 
-    if (-1 == loadVoyages(voyagesPath, config)) {
-        freeIthacaConfig(config);
+    if (-1 == loadVoyages(psVoyagesPath, pstConfig)) {
+        freeIthacaConfig(pstConfig);
         return -1;
     }
     return 0;
@@ -100,19 +99,19 @@ int loadIthacaConfig(char *configPath, char *voyagesPath, IthacaConfig *config) 
  *
  * @Name: freeIthacaConfig
  * @Def: Frees everything loadIthacaConfig allocated.
- * @Arg: In/Out: config = configuration to free
+ * @Arg: In/Out: pstConfig = configuration to free
  * @Ret: -
  *
  ************************************************/
-void freeIthacaConfig(IthacaConfig *config) {
+void freeIthacaConfig(IthacaConfig *pstConfig) {
 
     int i = 0;
 
-    free(config->name);
-    free(config->folder);
-    free(config->ip);
-    for (i = 0; i < config->numVoyages; i++) {
-        free(config->voyages[i].object);
+    free(pstConfig->psName);
+    free(pstConfig->psFolder);
+    free(pstConfig->psIp);
+    for (i = 0; i < pstConfig->nNumVoyages; i++) {
+        free(pstConfig->pstVoyages[i].psObject);
     }
-    free(config->voyages);
+    free(pstConfig->pstVoyages);
 }

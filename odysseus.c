@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if (-1 != asprintf(&psMessage, "Welcome aboard, %s. Type a command.\n", stConfig.psName)) {
+    if (-1 != asprintf(&psMessage, "Odysseus %s is ready to sail.\n", stConfig.psName)) {
         printString(psMessage);
         free(psMessage);
     }

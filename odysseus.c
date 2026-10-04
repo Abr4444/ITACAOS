@@ -7,6 +7,7 @@
  *
  ************************************************/
 
+#define _GNU_SOURCE
 #include "odysseusConfig.h"
 #include "terminal.h"
 #include <signal.h>
@@ -48,7 +49,8 @@ static void runTerminal(void) {
     char *psLine = NULL;
 
     printString(PROMPT);
-    while (0 == gnStop && 0 == readInputLine(STDIN_FILENO, &psLine)) {
+    psLine = readLine(STDIN_FILENO);
+    while (0 == gnStop && NULL != psLine) {
         switch (parseCommand(psLine, &stCommand)) {
             case PARSE_OK:
                 printString("Command OK\n");
@@ -64,7 +66,9 @@ static void runTerminal(void) {
         }
         free(psLine);
         printString(PROMPT);
+        psLine = readLine(STDIN_FILENO);
     }
+    free(psLine);
     printString("\n");
 }
 

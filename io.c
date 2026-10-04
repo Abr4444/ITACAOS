@@ -40,9 +40,11 @@ int printError(char *psText) {
  *
  * @Name: readLine
  * @Def: Reads one line from a file, without the '\n'.
+ *       An empty line is a valid line: it returns an empty string.
  * @Arg: In: nFd = file descriptor to read from
- * @Ret: A malloc'd copy of the line that the caller must free,
- *       or NULL at end of file, on an empty line or if memory runs out.
+ * @Ret: A malloc'd copy of the line that the caller must free, or NULL
+ *       at end of file with nothing read, on a read error (a closed
+ *       stdin after CTRL+C) or if memory runs out.
  *
  ************************************************/
 char *readLine(int nFd) {
@@ -51,8 +53,16 @@ char *readLine(int nFd) {
     char *psMore = NULL;
     char cChar = ' ';
     int nLength = 0;
+    int nRead = 0;
 
-    while (1 == read(nFd, &cChar, 1) && '\n' != cChar) {
+    psLine = malloc(1);
+    if (NULL == psLine) {
+        printError("Error: not enough memory to read a line.\n");
+        return NULL;
+    }
+
+    nRead = read(nFd, &cChar, 1);
+    while (1 == nRead && '\n' != cChar) {
         psMore = realloc(psLine, nLength + 2);
         if (NULL == psMore) {
             printError("Error: not enough memory to read a line.\n");
@@ -62,58 +72,15 @@ char *readLine(int nFd) {
         psLine = psMore;
         psLine[nLength] = cChar;
         nLength++;
-    }
-
-    if (NULL != psLine) {
-        psLine[nLength] = '\0';
-    }
-    return psLine;
-}
-
-
-/************************************************
- *
- * @Name: readInputLine
- * @Def: Reads one line typed in the terminal, without the '\n'.
- *       Unlike readLine, an empty line is a valid (empty) string.
- * @Arg: In: nFd = file descriptor to read from
- *       Out: ppsLine = malloc'd line that the caller must free
- * @Ret: 0 on success, -1 on end of input, error (CTRL+C closes stdin)
- *       or lack of memory (nothing is left allocated).
- *
- ************************************************/
-int readInputLine(int nFd, char **ppsLine) {
- 
-    char *psLine = NULL;
-    char *psMore = NULL;
-    char cChar = ' ';
-    int nLength = 0;
-    int nRead = 0;
- 
-    psLine = malloc(1);
-    if (NULL == psLine) {
-        printError("Error: not enough memory to read a line.\n");
-        return -1;
-    }
-    nRead = read(nFd, &cChar, 1);
-    while (1 == nRead && '\n' != cChar) {
-        psMore = realloc(psLine, nLength + 2);
-        if (NULL == psMore) {
-            printError("Error: not enough memory to read a line.\n");
-            free(psLine);
-            return -1;
-        }
-        psLine = psMore;
-        psLine[nLength] = cChar;
-        nLength++;
         nRead = read(nFd, &cChar, 1);
     }
- 
-    if (1 != nRead) {
+
+    // nRead is 1 if the line ended with '\n', 0 at end of file, -1 on error.
+    // A last line without '\n' is still a line, but nothing at all is not.
+    if (-1 == nRead || (0 == nRead && 0 == nLength)) {
         free(psLine);
-        return -1;
+        return NULL;
     }
     psLine[nLength] = '\0';
-    *ppsLine = psLine;
-    return 0;
+    return psLine;
 }

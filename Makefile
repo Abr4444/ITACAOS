@@ -1,41 +1,13 @@
-CC      = gcc
-CFLAGS  = -Wall -Wextra -g -D_GNU_SOURCE
-
-# sphragis.o is a Linux ELF — island only builds on Linux
-UNAME := $(shell uname)
-ifeq ($(UNAME), Linux)
-    TARGETS = ithaca odysseus island
-    ISLAND_LDFLAGS = lib/sphragis.o
-else
-    TARGETS = ithaca odysseus
-    ISLAND_LDFLAGS =
-endif
-
-ITHACA_SRC   = ithaca.c ithacaConfig.c io.c
-ODYSSEUS_SRC = odysseus.c odysseusConfig.c io.c terminal.c
-ISLAND_SRC   = island.c islandConfig.c io.c
-
-ITHACA_OBJ   = $(ITHACA_SRC:.c=.o)
-ODYSSEUS_OBJ = $(ODYSSEUS_SRC:.c=.o)
-ISLAND_OBJ   = $(ISLAND_SRC:.c=.o)
-
-ALL_OBJ = $(ITHACA_OBJ) $(ODYSSEUS_OBJ) $(ISLAND_OBJ)
+CC = gcc
+CFLAGS = -Wall -Wextra -g
 
 .PHONY: all clean run
 
-all: $(TARGETS)
+all: ithaca odysseus island
 
-ithaca: $(ITHACA_OBJ)
-	$(CC) $(CFLAGS) -o $@ $^
-
-odysseus: $(ODYSSEUS_OBJ)
-	$(CC) $(CFLAGS) -o $@ $^
-
-island: $(ISLAND_OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(ISLAND_LDFLAGS)
-
-%.o: %.c
-	$(CC) $(CFLAGS) -I. -Ilib -c $< -o $@
+ithaca: ithaca.o ithacaConfig.o io.o
+odysseus: odysseus.o odysseusConfig.o io.o terminal.o
+island: island.o islandConfig.o io.o lib/sphragis.o
 
 run: all
 	./ithaca data/configs/ithaca.dat data/voyages.dat &
@@ -43,4 +15,4 @@ run: all
 	./odysseus data/configs/odysseus.dat
 
 clean:
-	rm -f $(ALL_OBJ) ithaca odysseus island
+	rm -f *.o ithaca odysseus island

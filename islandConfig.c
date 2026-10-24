@@ -26,7 +26,7 @@ static int readRoutes(int nFd, IslandConfig *pstConfig) {
     int nIndex = 0;
 
     psLine = readLine(nFd);
-    while (NULL != psLine) {
+    while (NULL != psLine && '\0' != psLine[0]) {
         pstMore = realloc(pstConfig->pstRoutes, (pstConfig->nNumRoutes + 1) * sizeof(Route));
         if (NULL == pstMore) {
             printError("Error: not enough memory for the routes.\n");
@@ -44,6 +44,7 @@ static int readRoutes(int nFd, IslandConfig *pstConfig) {
 
         psLine = readLine(nFd);
     }
+    free(psLine);
     return 0;
 }
 

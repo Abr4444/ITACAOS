@@ -8,6 +8,7 @@
  *
  ************************************************/
 
+#define _GNU_SOURCE
 #include "ithacaConfig.h"
 #include <signal.h>
 

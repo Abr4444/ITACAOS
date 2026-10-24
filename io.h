@@ -22,6 +22,5 @@
 int printString(char *psText);
 int printError(char *psText);
 char *readLine(int nFd);
-int readInputLine(int nFd, char **ppsLine);
 
 #endif

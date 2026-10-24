@@ -7,6 +7,7 @@
  *
  ************************************************/
 
+#define _GNU_SOURCE
 #include "islandConfig.h"
 #include <signal.h>
 

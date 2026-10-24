@@ -34,7 +34,7 @@ static int loadVoyages(char *psPath, IthacaConfig *pstConfig) {
     }
 
     psLine = readLine(nFd);
-    while (NULL != psLine) {
+    while (NULL != psLine && '\0' != psLine[0]) {
         pstMore = realloc(pstConfig->pstVoyages, (pstConfig->nNumVoyages + 1) * sizeof(Voyage));
         if (NULL == pstMore) {
             printError("Error: not enough memory for the voyages.\n");
@@ -56,6 +56,7 @@ static int loadVoyages(char *psPath, IthacaConfig *pstConfig) {
         psLine = readLine(nFd);
     }
 
+    free(psLine);
     close(nFd);
     return 0;
 }

@@ -1,18 +1,94 @@
+#################################################
+#
+# Nostos System - Makefile
+# Authors: Stefan Radulescu, Albert Baiget Rodulfo
+#
+# make          builds ithaca, island and odysseus
+# make clean    removes the object files and the executables
+# make tar      packs the delivery (set GROUP first)
+#
+#################################################
+
 CC = gcc
-CFLAGS = -Wall -Wextra -g
+CFLAGS = -Wall -Wextra -g -Isrc/common -Ilib
 
-.PHONY: all clean run
+SRC = src
+OBJ = obj
 
-all: ithaca odysseus island
+GROUP = Gx
+PHASE = F2
 
-ithaca: ithaca.o ithacaConfig.o io.o
-odysseus: odysseus.o odysseusConfig.o io.o terminal.o
-island: island.o islandConfig.o io.o lib/sphragis.o
+.PHONY: all clean tar
 
-run: all
-	./ithaca data/configs/ithaca.dat data/voyages.dat &
-	./island data/configs/island.dat data/island_stock/Aeaea.db &
-	./odysseus data/configs/odysseus.dat
+all: ithaca island odysseus
+
+#################################################
+# Executables
+#################################################
+
+ithaca: $(OBJ)/ithaca.o $(OBJ)/ithacaConfig.o $(OBJ)/io.o
+	$(CC) $(CFLAGS) $(OBJ)/ithaca.o $(OBJ)/ithacaConfig.o $(OBJ)/io.o -o ithaca
+
+island: $(OBJ)/island.o $(OBJ)/islandConfig.o $(OBJ)/io.o lib/sphragis.o
+	$(CC) $(CFLAGS) $(OBJ)/island.o $(OBJ)/islandConfig.o $(OBJ)/io.o lib/sphragis.o -o island
+
+odysseus: $(OBJ)/odysseus.o $(OBJ)/odysseusConfig.o $(OBJ)/terminal.o $(OBJ)/io.o
+	$(CC) $(CFLAGS) $(OBJ)/odysseus.o $(OBJ)/odysseusConfig.o $(OBJ)/terminal.o $(OBJ)/io.o -o odysseus
+
+#################################################
+# Common modules
+#################################################
+
+$(OBJ)/io.o: $(SRC)/common/io.c $(SRC)/common/io.h
+	mkdir -p $(OBJ)
+	$(CC) $(CFLAGS) -c $(SRC)/common/io.c -o $(OBJ)/io.o
+
+#################################################
+# Ithaca
+#################################################
+
+$(OBJ)/ithaca.o: $(SRC)/ithaca/ithaca.c $(SRC)/ithaca/ithacaConfig.h $(SRC)/common/io.h
+	mkdir -p $(OBJ)
+	$(CC) $(CFLAGS) -c $(SRC)/ithaca/ithaca.c -o $(OBJ)/ithaca.o
+
+$(OBJ)/ithacaConfig.o: $(SRC)/ithaca/ithacaConfig.c $(SRC)/ithaca/ithacaConfig.h $(SRC)/common/io.h
+	mkdir -p $(OBJ)
+	$(CC) $(CFLAGS) -c $(SRC)/ithaca/ithacaConfig.c -o $(OBJ)/ithacaConfig.o
+
+#################################################
+# Island
+#################################################
+
+$(OBJ)/island.o: $(SRC)/island/island.c $(SRC)/island/islandConfig.h $(SRC)/common/io.h lib/sphragis.h
+	mkdir -p $(OBJ)
+	$(CC) $(CFLAGS) -c $(SRC)/island/island.c -o $(OBJ)/island.o
+
+$(OBJ)/islandConfig.o: $(SRC)/island/islandConfig.c $(SRC)/island/islandConfig.h $(SRC)/common/io.h lib/sphragis.h
+	mkdir -p $(OBJ)
+	$(CC) $(CFLAGS) -c $(SRC)/island/islandConfig.c -o $(OBJ)/islandConfig.o
+
+#################################################
+# Odysseus
+#################################################
+
+$(OBJ)/odysseus.o: $(SRC)/odysseus/odysseus.c $(SRC)/odysseus/odysseusConfig.h $(SRC)/odysseus/terminal.h $(SRC)/common/io.h
+	mkdir -p $(OBJ)
+	$(CC) $(CFLAGS) -c $(SRC)/odysseus/odysseus.c -o $(OBJ)/odysseus.o
+
+$(OBJ)/odysseusConfig.o: $(SRC)/odysseus/odysseusConfig.c $(SRC)/odysseus/odysseusConfig.h $(SRC)/common/io.h
+	mkdir -p $(OBJ)
+	$(CC) $(CFLAGS) -c $(SRC)/odysseus/odysseusConfig.c -o $(OBJ)/odysseusConfig.o
+
+$(OBJ)/terminal.o: $(SRC)/odysseus/terminal.c $(SRC)/odysseus/terminal.h $(SRC)/common/io.h
+	mkdir -p $(OBJ)
+	$(CC) $(CFLAGS) -c $(SRC)/odysseus/terminal.c -o $(OBJ)/terminal.o
+
+#################################################
+# Utilities
+#################################################
 
 clean:
-	rm -f *.o ithaca odysseus island
+	rm -rf $(OBJ) ithaca island odysseus
+
+tar: clean
+	tar cf $(GROUP)_$(PHASE).tar Makefile README.md src lib data docs

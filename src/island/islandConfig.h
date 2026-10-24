@@ -12,7 +12,7 @@
  ************************************************/
 
 #include "io.h"
-#include "lib/sphragis.h"
+#include "sphragis.h"
 
 typedef struct {
     char *psName;

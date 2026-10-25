@@ -10,10 +10,11 @@
 
 #define _GNU_SOURCE
 #include "ithacaConfig.h"
+#include "socket.h"
 #include <signal.h>
 
-// Raised by CTRL+C. The only global of this process.
-int gnStop = 0;
+//listening socket, shut down by CTRL+C
+int gnServerFd = -1;
 
 /************************************************
  *
@@ -26,13 +27,14 @@ int gnStop = 0;
 void handleInterrupt(int nSignal) {
 
     (void) nSignal;
-    gnStop = 1;
+    shutdown(gnServerFd, SHUT_RDWR);
 }
 
 int main(int argc, char *argv[]) {
 
     IthacaConfig stConfig;
     char *psMessage = NULL;
+    int nClientFd = 0;
 
     if (3 != argc) {
         printError("Usage: ./ithaca <config.dat> <voyages.dat>\n");
@@ -41,8 +43,16 @@ int main(int argc, char *argv[]) {
     if (-1 == loadIthacaConfig(argv[1], argv[2], &stConfig)) {
         return 1;
     }
-    if (SIG_ERR == signal(SIGINT, handleInterrupt)) {
-        printError("Error: could not install the CTRL+C handler.\n");
+
+    gnServerFd = openListenConn(stConfig.psIp, stConfig.nPort);
+    if (-1 == gnServerFd) {
+        printError("Error: could not open Ithaca's port. Check the IP and port of the config file.\n");
+        freeIthacaConfig(&stConfig);
+        return 1;
+    }
+    if (SIG_ERR == signal(SIGINT, handleInterrupt) || SIG_ERR == signal(SIGPIPE, SIG_IGN)) {
+        printError("Error: could not install the signal handlers.\n");
+        close(gnServerFd);
         freeIthacaConfig(&stConfig);
         return 1;
     }
@@ -52,10 +62,15 @@ int main(int argc, char *argv[]) {
         free(psMessage);
     }
 
-    while (0 == gnStop) {
-        pause();
+    // Temporary, step 5 replaces it: greet each connection and hang up
+    nClientFd = accept(gnServerFd, NULL, NULL);
+    while (-1 != nClientFd) {
+        printString("Someone connected.\n");
+        close(nClientFd);
+        nClientFd = accept(gnServerFd, NULL, NULL);
     }
 
+    close(gnServerFd);
     printString("\nIthaca closes the harbor.\n");
     freeIthacaConfig(&stConfig);
     return 0;

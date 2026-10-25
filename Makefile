@@ -26,8 +26,8 @@ all: ithaca island odysseus
 # Executables
 #################################################
 
-ithaca: $(OBJ)/ithaca.o $(OBJ)/ithacaConfig.o $(OBJ)/io.o
-	$(CC) $(CFLAGS) $(OBJ)/ithaca.o $(OBJ)/ithacaConfig.o $(OBJ)/io.o -o ithaca
+ithaca: $(OBJ)/ithaca.o $(OBJ)/ithacaConfig.o $(OBJ)/socket.o $(OBJ)/io.o
+	$(CC) $(CFLAGS) $(OBJ)/ithaca.o $(OBJ)/ithacaConfig.o $(OBJ)/socket.o $(OBJ)/io.o -o ithaca
 
 island: $(OBJ)/island.o $(OBJ)/islandConfig.o $(OBJ)/io.o lib/sphragis.o
 	$(CC) $(CFLAGS) $(OBJ)/island.o $(OBJ)/islandConfig.o $(OBJ)/io.o lib/sphragis.o -o island
@@ -43,11 +43,19 @@ $(OBJ)/io.o: $(SRC)/common/io.c $(SRC)/common/io.h
 	mkdir -p $(OBJ)
 	$(CC) $(CFLAGS) -c $(SRC)/common/io.c -o $(OBJ)/io.o
 
+$(OBJ)/socket.o: $(SRC)/common/socket.c $(SRC)/common/socket.h
+	mkdir -p $(OBJ)
+	$(CC) $(CFLAGS) -c $(SRC)/common/socket.c -o $(OBJ)/socket.o
+
+$(OBJ)/frame.o: $(SRC)/common/frame.c $(SRC)/common/frame.h
+	mkdir -p $(OBJ)
+	$(CC) $(CFLAGS) -c $(SRC)/common/frame.c -o $(OBJ)/frame.o
+
 #################################################
 # Ithaca
 #################################################
 
-$(OBJ)/ithaca.o: $(SRC)/ithaca/ithaca.c $(SRC)/ithaca/ithacaConfig.h $(SRC)/common/io.h
+$(OBJ)/ithaca.o: $(SRC)/ithaca/ithaca.c $(SRC)/ithaca/ithacaConfig.h $(SRC)/common/socket.h $(SRC)/common/io.h
 	mkdir -p $(OBJ)
 	$(CC) $(CFLAGS) -c $(SRC)/ithaca/ithaca.c -o $(OBJ)/ithaca.o
 

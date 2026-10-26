@@ -10,7 +10,7 @@
 #################################################
 
 CC = gcc
-CFLAGS = -Wall -Wextra -g -Isrc/common -Ilib
+CFLAGS = -Wall -Wextra -g -pthread -Isrc/common -Ilib
 
 SRC = src
 OBJ = obj
@@ -26,8 +26,8 @@ all: ithaca island odysseus
 # Executables
 #################################################
 
-ithaca: $(OBJ)/ithaca.o $(OBJ)/ithacaConfig.o $(OBJ)/socket.o $(OBJ)/io.o
-	$(CC) $(CFLAGS) $(OBJ)/ithaca.o $(OBJ)/ithacaConfig.o $(OBJ)/socket.o $(OBJ)/io.o -o ithaca
+ithaca: $(OBJ)/ithaca.o $(OBJ)/ithacaServer.o $(OBJ)/ithacaConfig.o $(OBJ)/frame.o $(OBJ)/socket.o $(OBJ)/io.o
+	$(CC) $(CFLAGS) $(OBJ)/ithaca.o $(OBJ)/ithacaServer.o $(OBJ)/ithacaConfig.o $(OBJ)/frame.o $(OBJ)/socket.o $(OBJ)/io.o -o ithaca
 
 island: $(OBJ)/island.o $(OBJ)/islandConfig.o $(OBJ)/io.o lib/sphragis.o
 	$(CC) $(CFLAGS) $(OBJ)/island.o $(OBJ)/islandConfig.o $(OBJ)/io.o lib/sphragis.o -o island
@@ -55,9 +55,13 @@ $(OBJ)/frame.o: $(SRC)/common/frame.c $(SRC)/common/frame.h
 # Ithaca
 #################################################
 
-$(OBJ)/ithaca.o: $(SRC)/ithaca/ithaca.c $(SRC)/ithaca/ithacaConfig.h $(SRC)/common/socket.h $(SRC)/common/io.h
+$(OBJ)/ithaca.o: $(SRC)/ithaca/ithaca.c $(SRC)/ithaca/ithacaServer.h $(SRC)/ithaca/ithacaConfig.h $(SRC)/common/frame.h $(SRC)/common/socket.h $(SRC)/common/io.h
 	mkdir -p $(OBJ)
 	$(CC) $(CFLAGS) -c $(SRC)/ithaca/ithaca.c -o $(OBJ)/ithaca.o
+
+$(OBJ)/ithacaServer.o: $(SRC)/ithaca/ithacaServer.c $(SRC)/ithaca/ithacaServer.h $(SRC)/ithaca/ithacaConfig.h $(SRC)/common/frame.h $(SRC)/common/socket.h $(SRC)/common/io.h
+	mkdir -p $(OBJ)
+	$(CC) $(CFLAGS) -c $(SRC)/ithaca/ithacaServer.c -o $(OBJ)/ithacaServer.o
 
 $(OBJ)/ithacaConfig.o: $(SRC)/ithaca/ithacaConfig.c $(SRC)/ithaca/ithacaConfig.h $(SRC)/common/io.h
 	mkdir -p $(OBJ)

@@ -10,6 +10,8 @@
 
 #define _GNU_SOURCE
 #include "ithacaConfig.h"
+#include "ithacaServer.h"
+
 #include "socket.h"
 #include <signal.h>
 
@@ -34,7 +36,7 @@ int main(int argc, char *argv[]) {
 
     IthacaConfig stConfig;
     char *psMessage = NULL;
-    int nClientFd = 0;
+    IthacaServer stServer;
 
     if (3 != argc) {
         printError("Usage: ./ithaca <config.dat> <voyages.dat>\n");
@@ -55,6 +57,11 @@ int main(int argc, char *argv[]) {
         close(gnServerFd);
         freeIthacaConfig(&stConfig);
         return 1;
+    }    
+    if (-1 == initIthacaServer(&stServer, &stConfig)) {
+        close(gnServerFd);
+        freeIthacaConfig(&stConfig);
+        return 1;
     }
 
     if (-1 != asprintf(&psMessage, "Ithaca initialized. %d voyages loaded.\nWaiting for Odysseus...\n", stConfig.nNumVoyages)) {
@@ -62,13 +69,9 @@ int main(int argc, char *argv[]) {
         free(psMessage);
     }
 
-    // Temporary, step 5 replaces it: greet each connection and hang up
-    nClientFd = accept(gnServerFd, NULL, NULL);
-    while (-1 != nClientFd) {
-        printString("Someone connected.\n");
-        close(nClientFd);
-        nClientFd = accept(gnServerFd, NULL, NULL);
-    }
+    runIthacaServer(&stServer, gnServerFd);
+
+    closeIthacaServer(&stServer);
 
     close(gnServerFd);
     printString("\nIthaca closes the harbor.\n");

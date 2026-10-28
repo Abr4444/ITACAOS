@@ -29,6 +29,7 @@ typedef struct {
 typedef struct {
     char *psName;
     char *psFolder;
+    char *psStockPath;
     char *psIp;
     int nPort;
     int nCapacity;

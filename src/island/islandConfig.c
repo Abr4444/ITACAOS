@@ -159,6 +159,12 @@ int loadIslandConfig(char *psConfigPath, char *psStockPath, IslandConfig *pstCon
         printError("Error: could not open the island config file.\n");
         return -1;
     }
+    pstConfig->psStockPath = strdup(psStockPath);
+    if (NULL == pstConfig->psStockPath) {
+        printError("Error: not enough memory for the stock path.\n");
+        close(nFd);
+        return -1;
+    }
     pstConfig->psName = readLine(nFd);
     pstConfig->psFolder = readLine(nFd);
     pstConfig->psIp = readLine(nFd);
@@ -193,6 +199,7 @@ void freeIslandConfig(IslandConfig *pstConfig) {
 
     free(pstConfig->psName);
     free(pstConfig->psFolder);
+    free(pstConfig->psStockPath);
     free(pstConfig->psIp);
     for (i = 0; i < pstConfig->nNumRoutes; i++) {
         free(pstConfig->pstRoutes[i].psName);

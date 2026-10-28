@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
     IthacaConfig stConfig;
     char *psMessage = NULL;
-    IthacaServer stServer;
+    IthacaServer stIthaca;
 
     if (3 != argc) {
         printError("Usage: ./ithaca <config.dat> <voyages.dat>\n");
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
         freeIthacaConfig(&stConfig);
         return 1;
     }    
-    if (-1 == initIthacaServer(&stServer, &stConfig)) {
+    if (-1 == initIthacaServer(&stIthaca, &stConfig)) {
         close(gnServerFd);
         freeIthacaConfig(&stConfig);
         return 1;
@@ -69,9 +69,9 @@ int main(int argc, char *argv[]) {
         free(psMessage);
     }
 
-    runIthacaServer(&stServer, gnServerFd);
+    runServer(&stIthaca.stServer, gnServerFd);
 
-    closeIthacaServer(&stServer);
+    closeServer(&stIthaca.stServer);
 
     close(gnServerFd);
     printString("\nIthaca closes the harbor.\n");

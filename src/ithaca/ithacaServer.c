@@ -66,6 +66,38 @@ static int identifyClient(Client *pstClient){
     return CLIENT_ACTIVE;
 }
 
+static int handleRequest(Client *pstClient, Frame *pstFrame){
+    char *psReason = NULL;
+
+    psReason = checkFrame(pstFrame);
+    if (NULL != psReason) {
+        sendNack(pstClient->nFd, psReason);
+        return CLIENT_ACTIVE;
+    }
+
+    switch (pstFrame->nType) {
+        case TYPE_DISCONNECT_ITHACA:
+            sendFrame(pstClient->nFd, TYPE_DISCONNECT_ITHACA, FLAGS_OK, "OK");
+            printClientEvent(pstClient->psName, "has left Ithaca. Fair winds!");
+            return CLIENT_LEFT;
+        case TYPE_CONNECT_ITHACA:
+            sendFrame(pstClient->nFd, TYPE_CONNECT_ITHACA, FLAGS_FAIL, "ALREADY_CONNECTED");
+            break;
+        case TYPE_LIST_VOYAGES:
+        case TYPE_ACCEPT:
+        case TYPE_CLAIM:
+            // Filled in by the next steps of the phase
+            sendFrame(pstClient->nFd, pstFrame->nType, FLAGS_FAIL, "NOT_IMPLEMENTED");
+            break;
+        case TYPE_NACK:
+            break;
+        default:
+            sendNack(pstClient->nFd, NACK_INVALID_TYPE);
+            break;
+    }
+    return CLIENT_ACTIVE;
+}
+
 static void* serveClient(void * pArg){
     Client* pstClient = (Client*) pArg;
     IthacaServer *pstServer = pstClient->pstServer;
@@ -76,6 +108,8 @@ static void* serveClient(void * pArg){
     while (CLIENT_ACTIVE == nState){
         if (-1 == receiveFrame(pstClient->nFd, &stFrame))
             nState = CLIENT_LOST;
+        else 
+            nState = handleRequest(pstClient, &stFrame);
     }
 
     pthread_mutex_lock(&pstServer->stClientsMutex);

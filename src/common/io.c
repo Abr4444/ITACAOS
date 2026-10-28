@@ -63,15 +63,17 @@ char *readLine(int nFd) {
 
     nRead = read(nFd, &cChar, 1);
     while (1 == nRead && '\n' != cChar) {
-        psMore = realloc(psLine, nLength + 2);
-        if (NULL == psMore) {
-            printError("Error: not enough memory to read a line.\n");
-            free(psLine);
-            return NULL;
+        if ('\r' != cChar) {   // ignore Windows line endings (CRLF)
+            psMore = realloc(psLine, nLength + 2);
+            if (NULL == psMore) {
+                printError("Error: not enough memory to read a line.\n");
+                free(psLine);
+                return NULL;
+            }
+            psLine = psMore;
+            psLine[nLength] = cChar;
+            nLength++;
         }
-        psLine = psMore;
-        psLine[nLength] = cChar;
-        nLength++;
         nRead = read(nFd, &cChar, 1);
     }
 

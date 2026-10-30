@@ -1,42 +1,84 @@
+/************************************************
+ *
+ * @File: islandServer.c
+ * @Purpose: An island's server: serves each Odysseus in its own thread,
+ *           with the berths of the port, the FIFO queue of ships waiting
+ *           offshore and the market (kept in stock.db).
+ *           Every request is handled entirely inside stMutex: requests
+ *           are short, and a ship waiting offshore blocks in read()
+ *           outside the lock, so nobody is stalled.
+ * @Author: Stefan Radulescu, Albert Baiget Rodulfo
+ * @Date: 30/10/2026
+ *
+ ************************************************/
+
 #define _GNU_SOURCE
 #include "islandServer.h"
 
 #include <limits.h>
 #include <strings.h>
 
+/************************************************
+ *
+ * @Name: islandOf
+ * @Def: Gives the island that serves a ship.
+ * @Arg: In: pstShip = the ship
+ * @Ret: The IslandServer stored in the ship's pOwner.
+ *
+ ************************************************/
 static IslandServer *islandOf(Client *pstShip) {
-    return (IslandServer *) pstShip->pstServer->pData;
+
+    return (IslandServer *) pstShip->pOwner;
 }
 
-// Every request is handled entirely inside stMutex: requests are short, and a
-// ship waiting offshore blocks in read() outside the lock, so nobody is stalled.
-
-// positive number of 1-9 digits, -1 otherwise
+/************************************************
+ *
+ * @Name: toAmount
+ * @Def: Converts a positive amount of 1 to 9 digits.
+ * @Arg: In: psWord = the amount as text
+ * @Ret: The amount, or -1 if it is not a positive number.
+ *
+ ************************************************/
 static int toAmount(char *psWord) {
-    int nValue = 0, i = 0;
+
+    int nValue = 0;
+    int i = 0;
 
     for (i = 0; '\0' != psWord[i]; i++) {
-        if (9 <= i || '0' > psWord[i] || '9' < psWord[i])
+        if (9 <= i || '0' > psWord[i] || '9' < psWord[i]) {
             return -1;
+        }
         nValue = nValue * 10 + (psWord[i] - '0');
     }
     return (0 == nValue) ? -1 : nValue;
 }
 
-// gives the free berths to the queued ships with the lowest ticket (FIFO)
+/************************************************
+ *
+ * @Name: dockQueued
+ * @Def: Gives the free berths to the queued ships with the lowest
+ *       ticket (FIFO). Must be called with stMutex locked.
+ * @Arg: In/Out: pstIsland = the island
+ * @Ret: -
+ *
+ ************************************************/
 static void dockQueued(IslandServer *pstIsland) {
+
+    ClientList *pstShips = &pstIsland->stShips;
     Client *pstNext = NULL;
     int i = 0;
 
     while (pstIsland->nDocked < pstIsland->pstConfig->nCapacity) {
         pstNext = NULL;
-        for (i = 0; i < pstIsland->stServer.nNumClients; i++) {
-            if (SHIP_QUEUED == pstIsland->stServer.ppstClients[i]->nState &&
-                (NULL == pstNext || pstIsland->stServer.ppstClients[i]->nTicket < pstNext->nTicket))
-                pstNext = pstIsland->stServer.ppstClients[i];
+        for (i = 0; i < pstShips->nNumClients; i++) {
+            if (SHIP_QUEUED == pstShips->ppstClients[i]->nState &&
+                (NULL == pstNext || pstShips->ppstClients[i]->nTicket < pstNext->nTicket)) {
+                pstNext = pstShips->ppstClients[i];
+            }
         }
-        if (NULL == pstNext)
+        if (NULL == pstNext) {
             return;
+        }
         pstNext->nState = SHIP_DOCKED;
         pstIsland->nDocked++;
         sendFrame(pstNext->nFd, TYPE_ARRIVAL, FLAGS_OK, "DOCKED");
@@ -44,18 +86,41 @@ static void dockQueued(IslandServer *pstIsland) {
     }
 }
 
-// departure, crash or lost at sea: frees the berth / place in the queue
+/************************************************
+ *
+ * @Name: freeBerth
+ * @Def: Departure, crash or lost at sea: frees the ship's berth or its
+ *       place in the queue, and docks the next waiting ship.
+ *       Must be called with stMutex locked.
+ * @Arg: In/Out: pstShip = the ship that leaves
+ * @Ret: -
+ *
+ ************************************************/
 static void freeBerth(Client *pstShip) {
+
     IslandServer *pstIsland = islandOf(pstShip);
 
-    if (SHIP_DOCKED == pstShip->nState)
+    if (SHIP_DOCKED == pstShip->nState) {
         pstIsland->nDocked--;
+    }
     pstShip->nState = SHIP_OUTSIDE;
-    if (0 == pstIsland->stServer.nClosing)
+    if (0 == pstIsland->stShips.nClosing) {
         dockQueued(pstIsland);
+    }
 }
 
+/************************************************
+ *
+ * @Name: handleArrival
+ * @Def: ARRIVAL: docks the ship if there is a free berth, otherwise
+ *       puts it at the end of the FIFO queue.
+ * @Arg: In/Out: pstShip = the ship, gets its name and ticket
+ *       In: pstFrame = the request, with the ship's name
+ * @Ret: -
+ *
+ ************************************************/
 static void handleArrival(Client *pstShip, Frame *pstFrame) {
+
     IslandServer *pstIsland = islandOf(pstShip);
 
     if (0 == pstFrame->nLength) {
@@ -67,11 +132,13 @@ static void handleArrival(Client *pstShip, Frame *pstFrame) {
         return;
     }
     free(pstShip->psName);
-    pstShip->psName = strdup(pstFrame->sData);
+    pstShip->psName = malloc(pstFrame->nLength + 1);
     if (NULL == pstShip->psName) {
         sendFrame(pstShip->nFd, TYPE_ARRIVAL, FLAGS_FAIL, "SERVER_OUT_OF_MEMORY");
         return;
     }
+    strcpy(pstShip->psName, pstFrame->sData);
+
     pstShip->nTicket = pstIsland->nNextTicket++;
     if (pstIsland->nDocked < pstIsland->pstConfig->nCapacity) {
         pstShip->nState = SHIP_DOCKED;
@@ -85,8 +152,16 @@ static void handleArrival(Client *pstShip, Frame *pstFrame) {
     }
 }
 
-// one frame per product and a last one for the map
+/************************************************
+ *
+ * @Name: handleMarket
+ * @Def: LIST MARKET: one frame per product and a last one for the map.
+ * @Arg: In: pstShip = the ship that asked
+ * @Ret: -
+ *
+ ************************************************/
 static void handleMarket(Client *pstShip) {
+
     IslandConfig *pstConfig = islandOf(pstShip)->pstConfig;
     char sData[FRAME_DATA_SIZE + 1];
     int nTotal = pstConfig->nNumProducts + 1;
@@ -101,39 +176,70 @@ static void handleMarket(Client *pstShip) {
     sendFrame(pstShip->nFd, TYPE_LIST_MARKET, FLAGS_OK, sData);
 }
 
-// writes product i in its place of stock.db (records are consecutive)
+/************************************************
+ *
+ * @Name: saveProduct
+ * @Def: Writes product i in its place of stock.db (the records are
+ *       consecutive, in the same order as in memory).
+ * @Arg: In: pstIsland = the island
+ *       In: i = index of the product
+ * @Ret: 0 on success, -1 on error.
+ *
+ ************************************************/
 static int saveProduct(IslandServer *pstIsland, int i) {
-    Product *pstProduct = &pstIsland->pstConfig->pstProducts[i];
 
-    if (-1 == lseek(pstIsland->nStockFd, (off_t) i * sizeof(Product), SEEK_SET))
+    Product *pstProduct = &pstIsland->pstConfig->pstProducts[i];
+    int nSize = sizeof(Product);
+
+    if (-1 == lseek(pstIsland->nStockFd, i * nSize, SEEK_SET)) {
         return -1;
-    return ((ssize_t) sizeof(Product) == write(pstIsland->nStockFd, pstProduct, sizeof(Product))) ? 0 : -1;
+    }
+    return (nSize == write(pstIsland->nStockFd, pstProduct, nSize)) ? 0 : -1;
 }
 
-// BUY / SELL "<Product>&<Amount>". The gold is checked by Odysseus, the island only knows prices.
+/************************************************
+ *
+ * @Name: trade
+ * @Def: BUY or SELL "<Product>&<Amount>". The gold is checked by
+ *       Odysseus, the island only knows the prices.
+ * @Arg: In: pstShip = the ship that trades
+ *       In: pstFrame = the request
+ *       Out: psAnswer = "OK&<Product>&<Amount>&<Cost or Income>"
+ * @Ret: NULL on success, or the reason of the error.
+ *
+ ************************************************/
 static char *trade(Client *pstShip, Frame *pstFrame, char *psAnswer) {
+
     IslandServer *pstIsland = islandOf(pstShip);
     IslandConfig *pstConfig = pstIsland->pstConfig;
     Product *pstProduct = NULL;
     char *psAmount = strchr(pstFrame->sData, '&');
-    int nAmount = 0, nDelta = 0, i = 0;
+    int nAmount = 0;
+    int nDelta = 0;
+    int i = 0;
 
-    if (NULL == psAmount)
+    if (NULL == psAmount) {
         return NACK_INVALID_DATA;
+    }
     *psAmount = '\0';
     nAmount = toAmount(psAmount + 1);
-    if (-1 == nAmount)
+    if (-1 == nAmount) {
         return "INVALID_AMOUNT";
+    }
 
-    while (i < pstConfig->nNumProducts && 0 != strcasecmp(pstConfig->pstProducts[i].sName, pstFrame->sData))
+    while (i < pstConfig->nNumProducts && 0 != strcasecmp(pstConfig->pstProducts[i].sName, pstFrame->sData)) {
         i++;
-    if (i == pstConfig->nNumProducts)
+    }
+    if (i == pstConfig->nNumProducts) {
         return "UNKNOWN_PRODUCT";
+    }
     pstProduct = &pstConfig->pstProducts[i];
-    if (TYPE_BUY == pstFrame->nType && nAmount > pstProduct->nAmount)
+    if (TYPE_BUY == pstFrame->nType && nAmount > pstProduct->nAmount) {
         return "NOT_ENOUGH_STOCK";
-    if (TYPE_SELL == pstFrame->nType && nAmount > INT_MAX - pstProduct->nAmount)
+    }
+    if (TYPE_SELL == pstFrame->nType && nAmount > INT_MAX - pstProduct->nAmount) {
         return "STOCK_FULL";
+    }
 
     nDelta = (TYPE_BUY == pstFrame->nType) ? -nAmount : nAmount;
     pstProduct->nAmount += nDelta;
@@ -146,8 +252,17 @@ static char *trade(Client *pstShip, Frame *pstFrame, char *psAnswer) {
     return NULL;
 }
 
-
+/************************************************
+ *
+ * @Name: handleMap
+ * @Def: BUY MAP: sends one frame per route of this island.
+ * @Arg: In: pstShip = the ship that buys it
+ *       In: pstFrame = the request, with the amount (must be 1)
+ * @Ret: -
+ *
+ ************************************************/
 static void handleMap(Client *pstShip, Frame *pstFrame) {
+
     IslandConfig *pstConfig = islandOf(pstShip)->pstConfig;
     char sData[FRAME_DATA_SIZE + 1];
     int i = 0;
@@ -168,16 +283,28 @@ static void handleMap(Client *pstShip, Frame *pstFrame) {
     printClientEvent(pstShip->psName, "bought the map.");
 }
 
-// mutex held. Bad frames get a NACK and the ship keeps being served
+/************************************************
+ *
+ * @Name: handleRequest
+ * @Def: Answers one request of a ship. Bad frames get a NACK and the
+ *       ship keeps being served. Must be called with stMutex locked.
+ * @Arg: In/Out: pstShip = the ship that sent it
+ *       In: pstFrame = the request
+ * @Ret: -
+ *
+ ************************************************/
 static void handleRequest(Client *pstShip, Frame *pstFrame) {
+
     char sAnswer[FRAME_DATA_SIZE + 1];
     char *psReason = checkFrame(pstFrame);
     int nType = pstFrame->nType;
 
-    if (NULL == psReason && (TYPE_ARRIVAL > nType || TYPE_DEPARTURE < nType))
+    if (NULL == psReason && (TYPE_ARRIVAL > nType || TYPE_DEPARTURE < nType)) {
         psReason = NACK_INVALID_TYPE;
-    if (NULL == psReason && FLAGS_REQUEST != pstFrame->nFlags)
+    }
+    if (NULL == psReason && FLAGS_REQUEST != pstFrame->nFlags) {
         psReason = NACK_INVALID_FLAGS;
+    }
 
     if (NULL != psReason) {
         sendNack(pstShip->nFd, psReason);
@@ -197,47 +324,113 @@ static void handleRequest(Client *pstShip, Frame *pstFrame) {
         freeBerth(pstShip);
         sendFrame(pstShip->nFd, TYPE_DEPARTURE, FLAGS_OK, "OK");
         printClientEvent(pstShip->psName, "left the port.");
-    } else {    // DELIVER is Phase 3
+    } else {
+        // DELIVER is Phase 3
         sendFrame(pstShip->nFd, nType, FLAGS_FAIL, "NOT_AVAILABLE");
     }
 }
 
-// runs in the ship's thread (called by server.c). Each request is handled inside stMutex
-static void serveShip(Client *pstShip) {
-    pthread_mutex_t *pstMutex = &pstShip->pstServer->stMutex;
+/************************************************
+ *
+ * @Name: serveShip
+ * @Def: Thread of one ship: answers its requests until it leaves, its
+ *       connection breaks, or the island closes. Then frees its berth or
+ *       its place in the queue, so a crashed ship never keeps one.
+ * @Arg: In: pArg = the Client to serve
+ * @Ret: NULL.
+ *
+ ************************************************/
+static void *serveShip(void *pArg) {
+
+    Client *pstShip = (Client *) pArg;
+    ClientList *pstShips = &islandOf(pstShip)->stShips;
     Frame stFrame;
 
     while (0 == receiveFrame(pstShip->nFd, &stFrame)) {
-        pthread_mutex_lock(pstMutex);
+        pthread_mutex_lock(&pstShips->stMutex);
         handleRequest(pstShip, &stFrame);
-        pthread_mutex_unlock(pstMutex);
+        pthread_mutex_unlock(&pstShips->stMutex);
     }
-}
 
-// stMutex held (called by server.c): a crashed / lost ship never keeps a berth
-static void endShip(Client *pstShip) {
-    if (SHIP_OUTSIDE != pstShip->nState && 0 == pstShip->pstServer->nClosing)
+    pthread_mutex_lock(&pstShips->stMutex);
+    // When the island itself is closing, the lost connections are expected
+    if (SHIP_OUTSIDE != pstShip->nState && 0 == pstShips->nClosing) {
         printClientEvent(pstShip->psName, "lost the connection.");
+    }
     freeBerth(pstShip);
+    pstShip->nFinished = 1;
+    pthread_mutex_unlock(&pstShips->stMutex);
+    return NULL;
 }
 
+/************************************************
+ *
+ * @Name: initIslandServer
+ * @Def: Prepares the island's server with an empty port and opens
+ *       stock.db to save every change of the market.
+ * @Arg: Out: pstIsland = the island
+ *       In: pstConfig = the loaded island configuration and stock
+ * @Ret: 0 on success, -1 on error.
+ *
+ ************************************************/
 int initIslandServer(IslandServer *pstIsland, IslandConfig *pstConfig) {
-    memset(pstIsland, 0, sizeof(IslandServer));
+
     pstIsland->pstConfig = pstConfig;
+    pstIsland->nDocked = 0;
+    pstIsland->nNextTicket = 0;
 
     pstIsland->nStockFd = open(pstConfig->psStockPath, O_WRONLY);
     if (-1 == pstIsland->nStockFd) {
         printError("Error: could not open the stock file for writing.\n");
         return -1;
     }
-    if (-1 == initServer(&pstIsland->stServer, pstIsland, serveShip, endShip)) {
+    if (-1 == initClientList(&pstIsland->stShips)) {
         close(pstIsland->nStockFd);
         return -1;
     }
     return 0;
 }
 
+/************************************************
+ *
+ * @Name: runIslandServer
+ * @Def: Accepts ship connections, each one served by its own thread,
+ *       until CTRL+C shuts the listening socket down.
+ * @Arg: In/Out: pstIsland = the island
+ *       In: nListenFd = listening socket
+ * @Ret: -
+ *
+ ************************************************/
+void runIslandServer(IslandServer *pstIsland, int nListenFd) {
+
+    int nFd = acceptClient(nListenFd);
+
+    while (-1 != nFd) {
+        reapClients(&pstIsland->stShips);
+        if (-1 == addClient(&pstIsland->stShips, nFd, serveShip, pstIsland)) {
+            printError("Error: could not start serving a new Odysseus.\n");
+            close(nFd);
+        }
+        nFd = acceptClient(nListenFd);
+    }
+    // EINVAL means CTRL+C shut the socket down, which is the normal exit.
+    // Any other errno means accept broke on its own, so say why we stop
+    if (EINVAL != errno) {
+        printError("Error: the island stopped accepting ships unexpectedly.\n");
+    }
+}
+
+/************************************************
+ *
+ * @Name: closeIslandServer
+ * @Def: Closes every ship connection, frees the server and closes
+ *       stock.db.
+ * @Arg: In/Out: pstIsland = the island
+ * @Ret: -
+ *
+ ************************************************/
 void closeIslandServer(IslandServer *pstIsland) {
-    closeServer(&pstIsland->stServer);
+
+    closeClientList(&pstIsland->stShips);
     close(pstIsland->nStockFd);
 }

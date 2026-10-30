@@ -21,7 +21,9 @@ int gnServerFd = -1;
 /************************************************
  *
  * @Name: handleInterrupt
- * @Def: SIGINT (CTRL+C) handler: it only raises the stop flag.
+ * @Def: SIGINT (CTRL+C) handler. signal() restarts an interrupted
+ *       accept(), so a flag would never be checked. Shutting the
+ *       listening socket down makes accept() fail and the accept loop end.
  * @Arg: In: nSignal = signal received (unused)
  * @Ret: -
  *
@@ -69,9 +71,9 @@ int main(int argc, char *argv[]) {
         free(psMessage);
     }
 
-    runServer(&stIthaca.stServer, gnServerFd);
+    runIthacaServer(&stIthaca, gnServerFd);
 
-    closeServer(&stIthaca.stServer);
+    closeIthacaServer(&stIthaca);
 
     close(gnServerFd);
     printString("\nIthaca closes the harbor.\n");

@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
         free(psMessage);
     }
 
-    runServer(&stIsland.stServer, gnServerFd);
+    runIslandServer(&stIsland, gnServerFd);
 
     closeIslandServer(&stIsland);
 

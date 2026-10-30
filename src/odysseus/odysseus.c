@@ -98,6 +98,7 @@ int main(int argc, char *argv[]) {
     runTerminal(&stShip);
 
     leavePort(&stShip);
+    freeShip(&stShip);
 
     freeOdysseusConfig(&stConfig);
     return 0;

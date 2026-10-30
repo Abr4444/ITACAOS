@@ -11,13 +11,20 @@
 #define SHIP_CONNECTED_ITHACA 1
 
 typedef struct {
-    OdysseusConfig *pstConfig;
+    OdysseusConfig *pstConfig;  
     int nState;
     int nFd;// socket of the current connection, -1 if none
+    char *psLocation;           // island where the ship is
+    int nGold;
+    int nVoyageId;              
+    char *psObject;             
+    char *psDestination;
+    int nReward;
 } Ship;
 
 void initShip(Ship *pstShip, OdysseusConfig *pstConfig);
 void executeCommand(Ship *pstShip, Command *pstCommand);
 void leavePort(Ship *pstShip);
+void freeShip(Ship *pstShip);
 
 #endif

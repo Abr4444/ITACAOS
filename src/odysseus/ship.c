@@ -1,5 +1,44 @@
 #define _GNU_SOURCE
 #include "ship.h"
+#define ITHACA_NAME "Ithaca"
+
+static void showStatus(Ship *pstShip) {
+    OdysseusConfig *pstConfig = pstShip->pstConfig;
+    char *psMessage = NULL;
+    char *psName = strdup(pstConfig->psName);
+    int nTotal = 0;
+    int i = 0;
+
+    for (i = 0; NULL != psName && '\0' != psName[i]; i++)
+        psName[i] = toupper((unsigned char) psName[i]);
+    if (-1 != asprintf(&psMessage, "--- %s ---\nGold: %d\n\nCargo:\n",
+                       (NULL != psName) ? psName : pstConfig->psName, pstShip->nGold)) {
+        printString(psMessage);
+        free(psMessage);
+    }
+    free(psName);
+
+    for (i = 0; i < pstConfig->nNumCargo; i++) {
+        if (0 < pstConfig->pstCargo[i].nKg &&
+            -1 != asprintf(&psMessage, "%s: %d kg\n", pstConfig->pstCargo[i].psName, pstConfig->pstCargo[i].nKg)) {
+            printString(psMessage);
+            free(psMessage);
+        }
+        nTotal += pstConfig->pstCargo[i].nKg;
+    }
+
+    if (0 == pstShip->nVoyageId) {
+        if (-1 != asprintf(&psMessage, "\nTotal provisions: %d kg\n\nCurrent voyage: None\nCurrent location: %s\n",
+                           nTotal, pstShip->psLocation)) {
+            printString(psMessage);
+            free(psMessage);
+        }
+    } else if (-1 != asprintf(&psMessage, "\nTotal provisions: %d kg\n\nCurrent voyage: %s -> %s\nReward: %d\nCurrent location: %s\n",
+                              nTotal, pstShip->psObject, pstShip->psDestination, pstShip->nReward, pstShip->psLocation)) {
+        printString(psMessage);
+        free(psMessage);
+    }
+}
 
 static void closeConnection(Ship *pstShip) {
 
@@ -48,12 +87,26 @@ void initShip(Ship *pstShip, OdysseusConfig *pstConfig) {
     pstShip->pstConfig = pstConfig;
     pstShip->nState = SHIP_AT_ITHACA;
     pstShip->nFd = -1;
+    pstShip->psLocation = ITHACA_NAME;
+    pstShip->nGold = pstConfig->nGold;
+    pstShip->nVoyageId = 0;
+    pstShip->psObject = NULL;
+    pstShip->psDestination = NULL;
+    pstShip->nReward = 0;
+}
+
+void freeShip(Ship *pstShip) {
+    free(pstShip->psObject);
+    free(pstShip->psDestination);
 }
 
 void executeCommand(Ship *pstShip, Command *pstCommand) {
     switch (pstCommand->nType) {
         case CMD_CONNECT_ITHACA:
             connectIthaca(pstShip);
+            break;
+        case CMD_STATUS:
+            showStatus(pstShip);
             break;
         default:
             // Implemented by the next steps of the phase

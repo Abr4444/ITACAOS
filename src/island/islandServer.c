@@ -64,6 +64,8 @@ static int toAmount(char *psWord) {
  ************************************************/
 static void dockQueued(IslandServer *pstIsland) {
 
+    char *psLog = NULL;
+
     ClientList *pstShips = &pstIsland->stShips;
     Client *pstNext = NULL;
     int i = 0;
@@ -82,7 +84,10 @@ static void dockQueued(IslandServer *pstIsland) {
         pstNext->nState = SHIP_DOCKED;
         pstIsland->nDocked++;
         sendFrame(pstNext->nFd, TYPE_ARRIVAL, FLAGS_OK, "DOCKED");
-        printClientEvent(pstNext->psName, "left the queue and docked.");
+        if (-1 != asprintf(&psLog, ">>> DOCKED sent to %s; he may enter the port.\n", pstNext->psName)) {
+            printString(psLog);
+            free(psLog);
+        }
     }
 }
 
@@ -122,6 +127,7 @@ static void freeBerth(Client *pstShip) {
 static void handleArrival(Client *pstShip, Frame *pstFrame) {
 
     IslandServer *pstIsland = islandOf(pstShip);
+    char *psLog = NULL;
 
     if (0 == pstFrame->nLength) {
         sendFrame(pstShip->nFd, TYPE_ARRIVAL, FLAGS_FAIL, "EMPTY_NAME");
@@ -138,17 +144,27 @@ static void handleArrival(Client *pstShip, Frame *pstFrame) {
         return;
     }
     strcpy(pstShip->psName, pstFrame->sData);
+    if (-1 != asprintf(&psLog, "\n>>> %s approaching %s.\n", pstShip->psName, pstIsland->pstConfig->psName)) {
+        printString(psLog);
+        free(psLog);
+    }
 
     pstShip->nTicket = pstIsland->nNextTicket++;
     if (pstIsland->nDocked < pstIsland->pstConfig->nCapacity) {
         pstShip->nState = SHIP_DOCKED;
         pstIsland->nDocked++;
         sendFrame(pstShip->nFd, TYPE_ARRIVAL, FLAGS_OK, "DOCKED");
-        printClientEvent(pstShip->psName, "arrived and docked.");
+        if (-1 != asprintf(&psLog, ">>> %s entered the port.\n", pstShip->psName)) {
+            printString(psLog);
+            free(psLog);
+        }
     } else {
         pstShip->nState = SHIP_QUEUED;
         sendFrame(pstShip->nFd, TYPE_ARRIVAL, FLAGS_OK, "WAIT");
-        printClientEvent(pstShip->psName, "arrived, the port is full: waiting offshore.");
+        if (-1 != asprintf(&psLog, ">>> Port full. %s waiting offshore in the FIFO queue.\n", pstShip->psName)) {
+            printString(psLog);
+            free(psLog);
+        }
     }
 }
 
@@ -214,6 +230,7 @@ static char *trade(Client *pstShip, Frame *pstFrame, char *psAnswer) {
     IslandConfig *pstConfig = pstIsland->pstConfig;
     Product *pstProduct = NULL;
     char *psAmount = strchr(pstFrame->sData, '&');
+    char *psLog = NULL;
     int nAmount = 0;
     int nDelta = 0;
     int i = 0;
@@ -249,6 +266,11 @@ static char *trade(Client *pstShip, Frame *pstFrame, char *psAnswer) {
     }
     snprintf(psAnswer, FRAME_DATA_SIZE + 1, "OK&%s&%d&%lld", pstProduct->sName, nAmount,
              (long long) nAmount * pstProduct->nPrice);
+    if (-1 != asprintf(&psLog, ">>> %s %s %d kg of %s.\n", pstShip->psName,
+                       (TYPE_BUY == pstFrame->nType) ? "bought" : "sold", nAmount, pstProduct->sName)) {
+        printString(psLog);
+        free(psLog);
+    }
     return NULL;
 }
 
@@ -265,6 +287,7 @@ static void handleMap(Client *pstShip, Frame *pstFrame) {
 
     IslandConfig *pstConfig = islandOf(pstShip)->pstConfig;
     char sData[FRAME_DATA_SIZE + 1];
+    char *psLog = NULL;
     int i = 0;
 
     if (1 != toAmount(pstFrame->sData)) {
@@ -280,7 +303,10 @@ static void handleMap(Client *pstShip, Frame *pstFrame) {
                  pstConfig->pstRoutes[i].psName, pstConfig->pstRoutes[i].psIp, pstConfig->pstRoutes[i].nPort);
         sendFrame(pstShip->nFd, TYPE_BUY_MAP, FLAGS_OK, sData);
     }
-    printClientEvent(pstShip->psName, "bought the map.");
+    if (-1 != asprintf(&psLog, ">>> %s bought the local map.\n", pstShip->psName)) {
+        printString(psLog);
+        free(psLog);
+    }
 }
 
 /************************************************
@@ -296,6 +322,7 @@ static void handleMap(Client *pstShip, Frame *pstFrame) {
 static void handleRequest(Client *pstShip, Frame *pstFrame) {
 
     char sAnswer[FRAME_DATA_SIZE + 1];
+    char *psLog = NULL;
     char *psReason = checkFrame(pstFrame);
     int nType = pstFrame->nType;
 
@@ -321,9 +348,12 @@ static void handleRequest(Client *pstShip, Frame *pstFrame) {
     } else if (TYPE_BUY_MAP == nType) {
         handleMap(pstShip, pstFrame);
     } else if (TYPE_DEPARTURE == nType) {
+        if (-1 != asprintf(&psLog, ">>> %s has left.\n", pstShip->psName)) {
+            printString(psLog);
+            free(psLog);
+        }
         freeBerth(pstShip);
         sendFrame(pstShip->nFd, TYPE_DEPARTURE, FLAGS_OK, "OK");
-        printClientEvent(pstShip->psName, "left the port.");
     } else {
         // DELIVER is Phase 3
         sendFrame(pstShip->nFd, nType, FLAGS_FAIL, "NOT_AVAILABLE");
@@ -345,6 +375,7 @@ static void *serveShip(void *pArg) {
     Client *pstShip = (Client *) pArg;
     ClientList *pstShips = &islandOf(pstShip)->stShips;
     Frame stFrame;
+    char *psLog = NULL;
 
     while (0 == receiveFrame(pstShip->nFd, &stFrame)) {
         pthread_mutex_lock(&pstShips->stMutex);
@@ -355,7 +386,10 @@ static void *serveShip(void *pArg) {
     pthread_mutex_lock(&pstShips->stMutex);
     // When the island itself is closing, the lost connections are expected
     if (SHIP_OUTSIDE != pstShip->nState && 0 == pstShips->nClosing) {
-        printClientEvent(pstShip->psName, "lost the connection.");
+        if (-1 != asprintf(&psLog, ">>> %s lost the connection.\n", pstShip->psName)) {
+            printString(psLog);
+            free(psLog);
+        }
     }
     freeBerth(pstShip);
     pstShip->nFinished = 1;

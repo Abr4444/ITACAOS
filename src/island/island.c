@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    if (-1 != asprintf(&psMessage, "Island %s initialized.\nPort capacity: %d %s.\n%d sea routes loaded.\n%d products available.\nWaiting for Odysseus...\n",
+    if (-1 != asprintf(&psMessage, "\nIsland %s initialized.\nPort capacity: %d %s.\n%d sea routes loaded.\n%d products available.\n",
                     stConfig.psName, stConfig.nCapacity, (1 == stConfig.nCapacity) ? "ship" : "ships",
                     stConfig.nNumRoutes, stConfig.nNumProducts)) {
         printString(psMessage);

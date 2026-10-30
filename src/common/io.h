@@ -23,4 +23,6 @@ int printString(char *psText);
 int printError(char *psText);
 char *readLine(int nFd);
 
+char *copyText(char *psText);
+
 #endif

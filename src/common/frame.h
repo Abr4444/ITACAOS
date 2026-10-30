@@ -54,4 +54,6 @@ int receiveFrame(int nFd, Frame *pstFrame);
 char *checkFrame(Frame *pstFrame);
 int sendNack(int nFd, char *psReason);
 
+int splitFields(char *psData, char *apsFields[], int nMax);
+
 #endif

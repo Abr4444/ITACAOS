@@ -76,3 +76,28 @@ char *checkFrame(Frame *pstFrame) {
 int sendNack(int nFd, char *psReason){
     return sendFrame(nFd, TYPE_NACK, FLAGS_FAIL, psReason);
 }
+
+/************************************************
+ *
+ * @Name: splitFields
+ * @Def: Splits the DATA of a frame on '&'. The data is modified: each
+ *       field ends with '\0' and apsFields points into it.
+ * @Arg: In/Out: psData = DATA of the frame
+ *       Out: apsFields = the fields found
+ *       In: nMax = number of fields expected
+ * @Ret: The number of fields found (at most nMax).
+ *
+ ************************************************/
+int splitFields(char *psData, char *apsFields[], int nMax) {
+
+    char *psField = NULL;
+    int nCount = 0;
+
+    psField = strtok(psData, "&");
+    while (NULL != psField && nCount < nMax) {
+        apsFields[nCount] = psField;
+        nCount++;
+        psField = strtok(NULL, "&");
+    }
+    return nCount;
+}

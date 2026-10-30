@@ -10,6 +10,8 @@
 #define SHIP_AT_ITHACA 0
 #define SHIP_CONNECTED_ITHACA 1
 
+#define LIST_VOYAGE_FIELDS 6     //Index&Total&VoyageID&Object&Destination&Reward
+#define ACCEPT_VOYAGE_FIELDS 5   //OK&VoyageID&Object&Destination&Reward
 typedef struct {
     OdysseusConfig *pstConfig;  
     int nState;
@@ -20,6 +22,8 @@ typedef struct {
     char *psObject;             
     char *psDestination;
     int nReward;
+    int *pnListedIds;// voyage IDs of the last LIST VOYAGES
+    int nNumListed;
 } Ship;
 
 void initShip(Ship *pstShip, OdysseusConfig *pstConfig);

@@ -86,3 +86,21 @@ char *readLine(int nFd) {
     psLine[nLength] = '\0';
     return psLine;
 }
+
+
+/************************************************
+ *
+ * @Name: copyText
+ * @Def: Makes a malloc'd copy of a string.
+ * @Arg: In: psText = string to copy
+ * @Ret: The copy, that the caller must free, or NULL if memory runs out.
+ *
+ ************************************************/
+char *copyText(char *psText) {
+
+    char *psCopy = malloc(strlen(psText) + 1);
+
+    if (NULL != psCopy)
+        strcpy(psCopy, psText);
+    return psCopy;
+}

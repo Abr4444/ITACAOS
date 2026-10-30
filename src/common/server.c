@@ -27,7 +27,7 @@ void printClientEvent(char *psName, char *psEvent) {
 
     char *psMessage = NULL;
 
-    if (-1 != asprintf(&psMessage, "\n>>> %s %s\n", psName, psEvent)) {
+    if (-1 != asprintf(&psMessage, ">>> %s %s\n", psName, psEvent)) {
         printString(psMessage);
         free(psMessage);
     }

@@ -51,6 +51,8 @@ static int loadVoyages(char *psPath, IthacaConfig *pstConfig) {
         pstConfig->pstVoyages[nIndex].psFile = strtok(NULL, " ");
         pstConfig->pstVoyages[nIndex].psDestination = strtok(NULL, " ");
         pstConfig->pstVoyages[nIndex].nReward = atoi(strtok(NULL, " "));
+        pstConfig->pstVoyages[nIndex].nState = VOYAGE_AVAILABLE;
+        pstConfig->pstVoyages[nIndex].psHolder = NULL;
         pstConfig->nNumVoyages++;
 
         psLine = readLine(nFd);
@@ -113,6 +115,7 @@ void freeIthacaConfig(IthacaConfig *pstConfig) {
     free(pstConfig->psIp);
     for (i = 0; i < pstConfig->nNumVoyages; i++) {
         free(pstConfig->pstVoyages[i].psObject);
+        free(pstConfig->pstVoyages[i].psHolder);
     }
     free(pstConfig->pstVoyages);
 }

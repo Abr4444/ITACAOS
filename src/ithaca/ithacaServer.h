@@ -24,6 +24,7 @@
 typedef struct {
     ClientList stClients;       // connected Odysseus, one thread each
     IthacaConfig *pstConfig;
+    pthread_mutex_t stVoyagesMutex;
 } IthacaServer;
 
 int initIthacaServer(IthacaServer *pstIthaca, IthacaConfig *pstConfig);

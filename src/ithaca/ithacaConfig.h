@@ -13,12 +13,19 @@
 
 #include "io.h"
 
+
+#define VOYAGE_AVAILABLE 0
+#define VOYAGE_ASSIGNED 1
+#define VOYAGE_FAILED 2
+
 typedef struct {
     int nId;
     char *psObject;
     char *psFile;
     char *psDestination;
     int nReward;
+    int nState;
+    char *psHolder; // name of the Odysseus it was assigned to, or NULL
 } Voyage;
 
 typedef struct {

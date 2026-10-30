@@ -90,9 +90,145 @@ static int identifyClient(IthacaServer *pstIthaca, Client *pstClient) {
         sendFrame(pstClient->nFd, TYPE_CONNECT_ITHACA, FLAGS_FAIL, psReason);
         return CLIENT_LEFT;
     }
+    printString("\n");
     sendFrame(pstClient->nFd, TYPE_CONNECT_ITHACA, FLAGS_OK, "OK");
     printClientEvent(pstClient->psName, "connected to Ithaca.");
     return CLIENT_ACTIVE;
+}
+
+/************************************************
+ *
+ * @Name: listVoyages
+ * @Def: LIST VOYAGES: sends one frame per available voyage, or "0" if
+ *       none is left. An Odysseus that still holds a voyage and asks for
+ *       the list again has restarted, so that voyage has failed.
+ * @Arg: In/Out: pstIthaca = the server
+ *       In: pstClient = the Odysseus that asked
+ * @Ret: -
+ *
+ ************************************************/
+static void listVoyages(IthacaServer *pstIthaca, Client *pstClient) {
+
+    IthacaConfig *pstConfig = pstIthaca->pstConfig;
+    Voyage *pstVoyage = NULL;
+    char *psData = NULL;
+    int nTotal = 0;
+    int nIndex = 0;
+    int nError = 0;
+
+    pthread_mutex_lock(&pstIthaca->stVoyagesMutex);
+    for (int i = 0; i < pstConfig->nNumVoyages; i++) {
+        pstVoyage = &pstConfig->pstVoyages[i];
+        if (VOYAGE_ASSIGNED == pstVoyage->nState && 0 == strcmp(pstVoyage->psHolder, pstClient->psName))
+            pstVoyage->nState = VOYAGE_FAILED;
+        if (VOYAGE_AVAILABLE == pstVoyage->nState)
+            nTotal++;
+    }
+    if (0 == nTotal)
+        sendFrame(pstClient->nFd, TYPE_LIST_VOYAGES, FLAGS_OK, "0");
+
+    for (int i = 0; i < pstConfig->nNumVoyages && 0 == nError; i++) {
+        pstVoyage = &pstConfig->pstVoyages[i];
+        if (VOYAGE_AVAILABLE == pstVoyage->nState) {
+            nIndex++;
+            if (-1 == asprintf(&psData, "%d&%d&%d&%s&%s&%d", nIndex, nTotal, pstVoyage->nId,
+                               pstVoyage->psObject, pstVoyage->psDestination, pstVoyage->nReward)) {
+                // Odysseus stops reading the list when it gets an error
+                sendFrame(pstClient->nFd, TYPE_LIST_VOYAGES, FLAGS_FAIL, "SERVER_OUT_OF_MEMORY");
+                nError = 1;
+            } else {
+                sendFrame(pstClient->nFd, TYPE_LIST_VOYAGES, FLAGS_OK, psData);
+                free(psData);
+            }
+        }
+    }
+    pthread_mutex_unlock(&pstIthaca->stVoyagesMutex);
+
+    printClientEvent(pstClient->psName, "requested available voyages.");
+}
+
+/************************************************
+ *
+ * @Name: toVoyageId
+ * @Def: Converts the <VoyageID> of an ACCEPT frame.
+ * @Arg: In: psText = the DATA of the frame
+ * @Ret: The ID, or -1 if it is not a positive number of up to 9 digits.
+ *
+ ************************************************/
+static int toVoyageId(char *psText) {
+
+    int nId = 0;
+    int i = 0;
+
+    for (i = 0; '\0' != psText[i]; i++) {
+        if (9 <= i || '0' > psText[i] || '9' < psText[i])
+            return -1;
+        nId = nId * 10 + (psText[i] - '0');
+    }
+    return (0 == nId) ? -1 : nId;
+}
+
+/************************************************
+ *
+ * @Name: acceptVoyage
+ * @Def: ACCEPT: assigns a voyage to the Odysseus if it is still
+ *       available. Checking and assigning under the same lock is what
+ *       guarantees that two ships never get the same voyage.
+ * @Arg: In/Out: pstIthaca = the server
+ *       In: pstClient = the Odysseus that accepts it
+ *       In: pstFrame = the request, with the voyage ID
+ * @Ret: -
+ *
+ ************************************************/
+static void acceptVoyage(IthacaServer *pstIthaca, Client *pstClient, Frame *pstFrame) {
+
+    IthacaConfig *pstConfig = pstIthaca->pstConfig;
+    Voyage *pstVoyage = NULL;
+    char *psReason = NULL;
+    char *psAnswer = NULL;
+    char *psMessage = NULL;
+    int nId = toVoyageId(pstFrame->sData);
+
+    if (-1 == nId) {
+        sendFrame(pstClient->nFd, TYPE_ACCEPT, FLAGS_FAIL, "INVALID_VOYAGE_ID");
+        return;
+    }
+    pthread_mutex_lock(&pstIthaca->stVoyagesMutex);
+    for (int i = 0; i < pstConfig->nNumVoyages && NULL == psReason; i++) {
+            if (VOYAGE_ASSIGNED == pstConfig->pstVoyages[i].nState && 
+                0 == strcmp(pstConfig->pstVoyages[i].psHolder, pstClient->psName))
+            psReason = "ALREADY_HAS_VOYAGE";
+    }
+    if (NULL == psReason) {
+        pstVoyage = &pstConfig->pstVoyages[nId - 1];
+        if (nId > pstConfig->nNumVoyages || VOYAGE_AVAILABLE != pstVoyage->nState)
+            psReason = "VOYAGE_NOT_AVAILABLE";
+        else {
+            pstVoyage->psHolder = malloc(strlen(pstClient->psName) + 1);
+            if (NULL == pstVoyage->psHolder ||
+                -1 == asprintf(&psAnswer, "OK&%d&%s&%s&%d", pstVoyage->nId, pstVoyage->psObject,
+                            pstVoyage->psDestination, pstVoyage->nReward)) {
+                free(pstVoyage->psHolder);
+                pstVoyage->psHolder = NULL;
+                psReason = "OUT_OF_MEMORY";
+            } else {
+                strcpy(pstVoyage->psHolder, pstClient->psName);
+                pstVoyage->nState = VOYAGE_ASSIGNED;
+            }
+        }
+    }
+    pthread_mutex_unlock(&pstIthaca->stVoyagesMutex);
+
+    if (NULL != psReason) {
+        sendFrame(pstClient->nFd, TYPE_ACCEPT, FLAGS_FAIL, psReason);
+        return;
+    }
+    sendFrame(pstClient->nFd, TYPE_ACCEPT, FLAGS_OK, psAnswer);
+    free(psAnswer);
+    if (-1 != asprintf(&psMessage, ">>> Voyage %d assigned to %s.\n", nId, pstClient->psName)) {
+        printString(psMessage);
+        free(psMessage);
+    }
 }
 
 /************************************************
@@ -104,7 +240,7 @@ static int identifyClient(IthacaServer *pstIthaca, Client *pstClient) {
  * @Ret: CLIENT_LEFT after a DISCONNECT, CLIENT_ACTIVE otherwise.
  *
  ************************************************/
-static int handleRequest(Client *pstClient, Frame *pstFrame) {
+static int handleRequest(IthacaServer *pstIthaca, Client *pstClient, Frame *pstFrame) {
 
     char *psReason = NULL;
 
@@ -118,12 +254,16 @@ static int handleRequest(Client *pstClient, Frame *pstFrame) {
         case TYPE_DISCONNECT_ITHACA:
             sendFrame(pstClient->nFd, TYPE_DISCONNECT_ITHACA, FLAGS_OK, "OK");
             printClientEvent(pstClient->psName, "has left Ithaca. Fair winds!");
-            return CLIENT_LEFT;
+             return CLIENT_LEFT;
         case TYPE_CONNECT_ITHACA:
             sendFrame(pstClient->nFd, TYPE_CONNECT_ITHACA, FLAGS_FAIL, "ALREADY_CONNECTED");
             break;
         case TYPE_LIST_VOYAGES:
+            listVoyages(pstIthaca, pstClient);
+            break;
         case TYPE_ACCEPT:
+            acceptVoyage(pstIthaca, pstClient, pstFrame);
+            break;
         case TYPE_CLAIM:
             // Filled in by the next steps of the phase
             sendFrame(pstClient->nFd, pstFrame->nType, FLAGS_FAIL, "NOT_IMPLEMENTED");
@@ -160,7 +300,7 @@ static void *serveOdysseus(void *pArg) {
         if (-1 == receiveFrame(pstClient->nFd, &stFrame)) {
             pstClient->nState = CLIENT_LOST;
         } else {
-            pstClient->nState = handleRequest(pstClient, &stFrame);
+            pstClient->nState = handleRequest(pstIthaca, pstClient, &stFrame);
         }
     }
 
@@ -186,7 +326,15 @@ static void *serveOdysseus(void *pArg) {
 int initIthacaServer(IthacaServer *pstIthaca, IthacaConfig *pstConfig) {
 
     pstIthaca->pstConfig = pstConfig;
-    return initClientList(&pstIthaca->stClients);
+    if (0 != pthread_mutex_init(&pstIthaca->stVoyagesMutex, NULL)) {
+        printError("Error: could not create the voyages mutex.\n");
+        return -1;
+    }
+    if (-1 == initClientList(&pstIthaca->stClients)) {
+        pthread_mutex_destroy(&pstIthaca->stVoyagesMutex);
+        return -1;
+    }
+    return 0;
 }
 
 /************************************************
@@ -229,4 +377,5 @@ void runIthacaServer(IthacaServer *pstIthaca, int nListenFd) {
 void closeIthacaServer(IthacaServer *pstIthaca) {
 
     closeClientList(&pstIthaca->stClients);
+    pthread_mutex_destroy(&pstIthaca->stVoyagesMutex);
 }

@@ -21,6 +21,8 @@
 #define TYPE_BUY 0x12
 #define TYPE_SELL 0x13
 #define TYPE_BUY_MAP 0x14
+#define MAP_PRICE 50
+
 #define TYPE_DELIVER 0x15
 #define TYPE_DEPARTURE 0x16
 
@@ -41,6 +43,7 @@
 #define FLAGS_REQUEST 0x00
 #define FLAGS_OK (FLAG_RESPONSE)
 #define FLAGS_FAIL (FLAG_RESPONSE | FLAG_ERROR)
+
 
 typedef struct{
     int nType;

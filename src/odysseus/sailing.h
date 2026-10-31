@@ -1,0 +1,23 @@
+#ifndef __SAILING_H__
+#define __SAILING_H__
+
+/************************************************
+ *
+ * @File: sailing.h
+ * @Purpose: SAIL: leaving a port, sailing along a known route, docking,
+ *           and waiting offshore while the port is full.
+ * @Author: Stefan Radulescu, Albert Baiget Rodulfo
+ * @Date: 31/10/2026
+ *
+ ************************************************/
+
+#include <sys/select.h>
+#include "ship.h"
+
+#define RATION_KG 7               // eaten for every full RATION_SECONDS of waiting
+#define RATION_SECONDS 5
+
+void sail(Ship *pstShip, char *psName);
+void leavePort(Ship *pstShip);
+
+#endif

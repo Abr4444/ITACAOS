@@ -9,6 +9,7 @@
 
 #define _GNU_SOURCE
 #include "ship.h"
+#include "sailing.h"
 #include <signal.h>
 
 #define PROMPT "$ "
@@ -64,8 +65,12 @@ static void runTerminal(Ship *pstShip) {
                 break;
         }
         free(psLine);
-        printString(PROMPT);
-        psLine = readLine(STDIN_FILENO);
+        psLine = NULL;
+        //ships lost at sea end the program without asking for more commands
+        if (SHIP_LOST != pstShip->nState) {
+            printString(PROMPT);
+            psLine = readLine(STDIN_FILENO);
+        }
     }
     free(psLine);
     printString("\n");

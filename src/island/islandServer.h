@@ -21,7 +21,6 @@
 #define SHIP_QUEUED 1    // waiting offshore in the FIFO queue
 #define SHIP_DOCKED 2    // inside the port, owns a berth
 
-#define MAP_PRICE 50
 
 typedef struct {
     ClientList stShips;        // connected ships; its mutex also protects the fields below

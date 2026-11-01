@@ -2,9 +2,9 @@
 bin/
 obj/
 *.o
-ithaca
-odysseus
-island
+/ithaca
+/odysseus
+/island
 
 # --- Submission archives (regenerated via `tar cf Gx_Fn.tar ...` for eStudy) ---
 *.tar

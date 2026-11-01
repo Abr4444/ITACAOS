@@ -1,24 +1,17 @@
 /************************************************
- *
  * @File: islandConfig.c
  * @Purpose: Loads and frees the configuration of an Island process
  *           (island.dat with its routes) and its market (stock.db).
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 30/09/2026
- *
  ************************************************/
 
 #include "islandConfig.h"
 
-/************************************************
- *
- * @Name: readRoutes
- * @Def: Reads every "<NAME> <IP> <PORT>" line after "--- ROUTES ---".
+/* @Name: readRoutes
+ * @Def: Reads the "<NAME> <IP> <PORT>" lines after "--- ROUTES ---".
  * @Arg: In: nFd = file descriptor of island.dat, positioned at the routes
  *       Out: pstConfig = gets pstRoutes and nNumRoutes
- * @Ret: 0 on success, -1 if memory runs out.
- *
- ************************************************/
+ * @Ret: 0 on success, -1 if memory runs out. */
 static int readRoutes(int nFd, IslandConfig *pstConfig) {
 
     Route *pstMore = NULL;
@@ -48,15 +41,10 @@ static int readRoutes(int nFd, IslandConfig *pstConfig) {
     return 0;
 }
 
-/************************************************
- *
- * @Name: filterRoutes
- * @Def: Removes the routes that SPHRAGIS says are not real connections.
- *       Mandatory before using the routes (p.13, p.17).
+/* @Name: filterRoutes
+ * @Def: Removes the routes SPHRAGIS rejects.
  * @Arg: In/Out: pstConfig = its routes are reduced to the valid ones
- * @Ret: 0 on success, -1 on error.
- *
- ************************************************/
+ * @Ret: 0 on success, -1 on error. */
 static int filterRoutes(IslandConfig *pstConfig) {
 
     SPHRAGIS_Island stIsland;
@@ -74,7 +62,6 @@ static int filterRoutes(IslandConfig *pstConfig) {
             return -1;
         }
     }
-    // Each name is the start of its own malloc'd line, so SPHRAGIS can free the rejected ones
     for (i = 0; i < pstConfig->nNumRoutes; i++) {
         stIsland.known_islands[i] = pstConfig->pstRoutes[i].psName;
     }
@@ -98,15 +85,11 @@ static int filterRoutes(IslandConfig *pstConfig) {
     return 0;
 }
 
-/************************************************
- *
- * @Name: loadStock
- * @Def: Reads every product record of the binary stock.db until the end.
+/* @Name: loadStock
+ * @Def: Reads every product record of stock.db.
  * @Arg: In: psPath = path of stock.db
  *       Out: pstConfig = gets pstProducts and nNumProducts
- * @Ret: 0 on success, -1 on error.
- *
- ************************************************/
+ * @Ret: 0 on success, -1 on error. */
 static int loadStock(char *psPath, IslandConfig *pstConfig) {
 
     Product stProduct;
@@ -136,17 +119,12 @@ static int loadStock(char *psPath, IslandConfig *pstConfig) {
     return 0;
 }
 
-/************************************************
- *
- * @Name: loadIslandConfig
- * @Def: Reads island.dat, validates its routes with SPHRAGIS and loads
- *       stock.db. The format is assumed correct (p.18).
+/* @Name: loadIslandConfig
+ * @Def: Reads island.dat, filters its routes and loads stock.db.
  * @Arg: In: psConfigPath = path of island.dat
  *       In: psStockPath = path of stock.db
  *       Out: pstConfig = the loaded configuration
- * @Ret: 0 on success, -1 on error (nothing is left allocated).
- *
- ************************************************/
+ * @Ret: 0 on success, -1 on error (nothing is left allocated). */
 int loadIslandConfig(char *psConfigPath, char *psStockPath, IslandConfig *pstConfig) {
 
     char *psLine = NULL;
@@ -157,6 +135,12 @@ int loadIslandConfig(char *psConfigPath, char *psStockPath, IslandConfig *pstCon
     nFd = open(psConfigPath, O_RDONLY);
     if (-1 == nFd) {
         printError("Error: could not open the island config file.\n");
+        return -1;
+    }
+    pstConfig->psStockPath = strdup(psStockPath);
+    if (NULL == pstConfig->psStockPath) {
+        printError("Error: not enough memory for the stock path.\n");
+        close(nFd);
         return -1;
     }
     pstConfig->psName = readLine(nFd);
@@ -179,20 +163,17 @@ int loadIslandConfig(char *psConfigPath, char *psStockPath, IslandConfig *pstCon
     return 0;
 }
 
-/************************************************
- *
- * @Name: freeIslandConfig
+/* @Name: freeIslandConfig
  * @Def: Frees everything loadIslandConfig allocated.
  * @Arg: In/Out: pstConfig = configuration to free
- * @Ret: -
- *
- ************************************************/
+ * @Ret: - */
 void freeIslandConfig(IslandConfig *pstConfig) {
 
     int i = 0;
 
     free(pstConfig->psName);
     free(pstConfig->psFolder);
+    free(pstConfig->psStockPath);
     free(pstConfig->psIp);
     for (i = 0; i < pstConfig->nNumRoutes; i++) {
         free(pstConfig->pstRoutes[i].psName);

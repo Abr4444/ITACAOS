@@ -1,22 +1,17 @@
 /************************************************
- *
  * @File: io.c
  * @Purpose: Input/output helpers shared by Odysseus, Ithaca and Island.
  *           Only read() and write() are used, as the statement requires.
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 28/09/2026
- *
  ************************************************/
 
 #include "io.h"
 
 /************************************************
- *
  * @Name: printString
  * @Def: Writes a string to the screen (stdout).
  * @Arg: In: psText = string to write
  * @Ret: The number of bytes written, or -1 on error.
- *
  ************************************************/
 int printString(char *psText) {
 
@@ -24,12 +19,10 @@ int printString(char *psText) {
 }
 
 /************************************************
- *
  * @Name: printError
  * @Def: Writes an error message to stderr.
  * @Arg: In: psText = message to write
  * @Ret: The number of bytes written, or -1 on error.
- *
  ************************************************/
 int printError(char *psText) {
 
@@ -37,7 +30,6 @@ int printError(char *psText) {
 }
 
 /************************************************
- *
  * @Name: readLine
  * @Def: Reads one line from a file, without the '\n'.
  *       An empty line is a valid line: it returns an empty string.
@@ -45,7 +37,6 @@ int printError(char *psText) {
  * @Ret: A malloc'd copy of the line that the caller must free, or NULL
  *       at end of file with nothing read, on a read error (a closed
  *       stdin after CTRL+C) or if memory runs out.
- *
  ************************************************/
 char *readLine(int nFd) {
 
@@ -63,15 +54,17 @@ char *readLine(int nFd) {
 
     nRead = read(nFd, &cChar, 1);
     while (1 == nRead && '\n' != cChar) {
-        psMore = realloc(psLine, nLength + 2);
-        if (NULL == psMore) {
-            printError("Error: not enough memory to read a line.\n");
-            free(psLine);
-            return NULL;
+        if ('\r' != cChar) {   // ignore Windows line endings (CRLF)
+            psMore = realloc(psLine, nLength + 2);
+            if (NULL == psMore) {
+                printError("Error: not enough memory to read a line.\n");
+                free(psLine);
+                return NULL;
+            }
+            psLine = psMore;
+            psLine[nLength] = cChar;
+            nLength++;
         }
-        psLine = psMore;
-        psLine[nLength] = cChar;
-        nLength++;
         nRead = read(nFd, &cChar, 1);
     }
 
@@ -83,4 +76,20 @@ char *readLine(int nFd) {
     }
     psLine[nLength] = '\0';
     return psLine;
+}
+
+
+/************************************************
+ * @Name: copyText
+ * @Def: Makes a malloc'd copy of a string.
+ * @Arg: In: psText = string to copy
+ * @Ret: The copy, that the caller must free, or NULL if memory runs out.
+ ************************************************/
+char *copyText(char *psText) {
+
+    char *psCopy = malloc(strlen(psText) + 1);
+
+    if (NULL != psCopy)
+        strcpy(psCopy, psText);
+    return psCopy;
 }

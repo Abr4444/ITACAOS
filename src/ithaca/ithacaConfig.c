@@ -1,24 +1,19 @@
 /************************************************
- *
  * @File: ithacaConfig.c
  * @Purpose: Loads and frees the configuration of Ithaca (ithaca.dat)
  *           and its voyages (voyages.dat).
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 28/09/2026
- *
  ************************************************/
 
 #include "ithacaConfig.h"
 
 /************************************************
- *
  * @Name: loadVoyages
  * @Def: Reads every "<OBJECT> <FILE> <DESTINATION> <REWARD>" line of
  *       voyages.dat and gives each voyage its line number as ID.
  * @Arg: In: psPath = path of voyages.dat
  *       Out: pstConfig = gets pstVoyages and nNumVoyages
  * @Ret: 0 on success, -1 on error.
- *
  ************************************************/
 static int loadVoyages(char *psPath, IthacaConfig *pstConfig) {
 
@@ -51,6 +46,8 @@ static int loadVoyages(char *psPath, IthacaConfig *pstConfig) {
         pstConfig->pstVoyages[nIndex].psFile = strtok(NULL, " ");
         pstConfig->pstVoyages[nIndex].psDestination = strtok(NULL, " ");
         pstConfig->pstVoyages[nIndex].nReward = atoi(strtok(NULL, " "));
+        pstConfig->pstVoyages[nIndex].nState = VOYAGE_AVAILABLE;
+        pstConfig->pstVoyages[nIndex].psHolder = NULL;
         pstConfig->nNumVoyages++;
 
         psLine = readLine(nFd);
@@ -62,14 +59,12 @@ static int loadVoyages(char *psPath, IthacaConfig *pstConfig) {
 }
 
 /************************************************
- *
  * @Name: loadIthacaConfig
  * @Def: Reads ithaca.dat and voyages.dat. The format is assumed correct (p.18).
  * @Arg: In: psConfigPath = path of ithaca.dat
  *       In: psVoyagesPath = path of voyages.dat
  *       Out: pstConfig = the loaded configuration
  * @Ret: 0 on success, -1 on error (nothing is left allocated).
- *
  ************************************************/
 int loadIthacaConfig(char *psConfigPath, char *psVoyagesPath, IthacaConfig *pstConfig) {
 
@@ -97,12 +92,10 @@ int loadIthacaConfig(char *psConfigPath, char *psVoyagesPath, IthacaConfig *pstC
 }
 
 /************************************************
- *
  * @Name: freeIthacaConfig
  * @Def: Frees everything loadIthacaConfig allocated.
  * @Arg: In/Out: pstConfig = configuration to free
  * @Ret: -
- *
  ************************************************/
 void freeIthacaConfig(IthacaConfig *pstConfig) {
 
@@ -113,6 +106,7 @@ void freeIthacaConfig(IthacaConfig *pstConfig) {
     free(pstConfig->psIp);
     for (i = 0; i < pstConfig->nNumVoyages; i++) {
         free(pstConfig->pstVoyages[i].psObject);
+        free(pstConfig->pstVoyages[i].psHolder);
     }
     free(pstConfig->pstVoyages);
 }

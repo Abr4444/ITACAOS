@@ -2,17 +2,15 @@
 #define __ISLAND_CONFIG_H__
 
 /************************************************
- *
  * @File: islandConfig.h
  * @Purpose: Loads and frees the configuration of an Island process
  *           (island.dat with its routes) and its market (stock.db).
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 30/09/2026
- *
  ************************************************/
 
 #include "io.h"
-#include "lib/sphragis.h"
+#include "sphragis.h"
+
 
 typedef struct {
     char *psName;
@@ -29,6 +27,7 @@ typedef struct {
 typedef struct {
     char *psName;
     char *psFolder;
+    char *psStockPath;
     char *psIp;
     int nPort;
     int nCapacity;

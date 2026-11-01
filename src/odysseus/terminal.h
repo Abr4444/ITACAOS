@@ -2,14 +2,11 @@
 #define __TERMINAL_H__
 
 /************************************************
- *
  * @File: terminal.h
  * @Purpose: Parser of the Odysseus command terminal. Recognizes the
  *           commands (case insensitive), checks their syntax and
  *           extracts their arguments.
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 02/10/2026
- *
  ************************************************/
 
 #include <ctype.h>

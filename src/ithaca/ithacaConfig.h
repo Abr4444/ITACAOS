@@ -2,16 +2,18 @@
 #define __ITHACA_CONFIG_H__
 
 /************************************************
- *
  * @File: ithacaConfig.h
  * @Purpose: Loads and frees the configuration of Ithaca (ithaca.dat)
  *           and its voyages (voyages.dat).
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 28/09/2026
- *
  ************************************************/
 
 #include "io.h"
+
+
+#define VOYAGE_AVAILABLE 0
+#define VOYAGE_ASSIGNED 1
+#define VOYAGE_FAILED 2
 
 typedef struct {
     int nId;
@@ -19,6 +21,8 @@ typedef struct {
     char *psFile;
     char *psDestination;
     int nReward;
+    int nState;
+    char *psHolder; // name of the Odysseus it was assigned to, or NULL
 } Voyage;
 
 typedef struct {

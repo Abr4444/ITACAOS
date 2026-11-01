@@ -1,38 +1,39 @@
 /************************************************
- *
  * @File: ithaca.c
  * @Purpose: Ithaca process (central server).
  *           Usage: ./ithaca <config.dat> <voyages.dat>
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 03/10/2026
- *
  ************************************************/
 
 #define _GNU_SOURCE
 #include "ithacaConfig.h"
+#include "ithacaServer.h"
+
+#include "socket.h"
 #include <signal.h>
 
-// Raised by CTRL+C. The only global of this process.
-int gnStop = 0;
+//listening socket, shut down by CTRL+C
+int gnServerFd = -1;
 
 /************************************************
- *
  * @Name: handleInterrupt
- * @Def: SIGINT (CTRL+C) handler: it only raises the stop flag.
+ * @Def: SIGINT (CTRL+C) handler. signal() restarts an interrupted
+ *       accept(), so a flag would never be checked. Shutting the
+ *       listening socket down makes accept() fail and the accept loop end.
  * @Arg: In: nSignal = signal received (unused)
  * @Ret: -
- *
  ************************************************/
 void handleInterrupt(int nSignal) {
 
     (void) nSignal;
-    gnStop = 1;
+    shutdown(gnServerFd, SHUT_RDWR);
 }
 
 int main(int argc, char *argv[]) {
 
     IthacaConfig stConfig;
     char *psMessage = NULL;
+    IthacaServer stIthaca;
 
     if (3 != argc) {
         printError("Usage: ./ithaca <config.dat> <voyages.dat>\n");
@@ -41,8 +42,21 @@ int main(int argc, char *argv[]) {
     if (-1 == loadIthacaConfig(argv[1], argv[2], &stConfig)) {
         return 1;
     }
-    if (SIG_ERR == signal(SIGINT, handleInterrupt)) {
-        printError("Error: could not install the CTRL+C handler.\n");
+
+    gnServerFd = openListenConn(stConfig.psIp, stConfig.nPort);
+    if (-1 == gnServerFd) {
+        printError("Error: could not open Ithaca's port. Check the IP and port of the config file.\n");
+        freeIthacaConfig(&stConfig);
+        return 1;
+    }
+    if (SIG_ERR == signal(SIGINT, handleInterrupt) || SIG_ERR == signal(SIGPIPE, SIG_IGN)) {
+        printError("Error: could not install the signal handlers.\n");
+        close(gnServerFd);
+        freeIthacaConfig(&stConfig);
+        return 1;
+    }    
+    if (-1 == initIthacaServer(&stIthaca, &stConfig)) {
+        close(gnServerFd);
         freeIthacaConfig(&stConfig);
         return 1;
     }
@@ -52,10 +66,11 @@ int main(int argc, char *argv[]) {
         free(psMessage);
     }
 
-    while (0 == gnStop) {
-        pause();
-    }
+    runIthacaServer(&stIthaca, gnServerFd);
 
+    closeIthacaServer(&stIthaca);
+
+    close(gnServerFd);
     printString("\nIthaca closes the harbor.\n");
     freeIthacaConfig(&stConfig);
     return 0;

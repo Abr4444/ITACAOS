@@ -1,15 +1,12 @@
 /************************************************
- *
  * @File: odysseus.c
  * @Purpose: Odysseus process (the ship). Usage: ./odysseus <config.dat>
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 03/10/2026
- *
  ************************************************/
 
 #define _GNU_SOURCE
-#include "odysseusConfig.h"
-#include "terminal.h"
+#include "ship.h"
+#include "sailing.h"
 #include <signal.h>
 
 #define PROMPT "$ "
@@ -17,7 +14,6 @@
 int gnStop = 0;
 
 /************************************************
- *
  * @Name: handleInterrupt
  * @Def: SIGINT (CTRL+C) handler: raises the stop flag and closes stdin.
  *       signal() makes the kernel restart a read() interrupted by CTRL+C,
@@ -25,7 +21,6 @@ int gnStop = 0;
  *       terminal loop end.
  * @Arg: In: nSignal = signal received (unused)
  * @Ret: -
- *
  ************************************************/
 void handleInterrupt(int nSignal) {
 
@@ -35,15 +30,13 @@ void handleInterrupt(int nSignal) {
 }
 
 /************************************************
- *
  * @Name: runTerminal
  * @Def: Reads and parses commands until CTRL+C or end of input.
  *       Phase 1 only checks the syntax, it does not run the command yet.
  * @Arg: -
  * @Ret: -
- *
  ************************************************/
-static void runTerminal(void) {
+static void runTerminal(Ship *pstShip) {
 
     Command stCommand;
     char *psLine = NULL;
@@ -53,7 +46,7 @@ static void runTerminal(void) {
     while (0 == gnStop && NULL != psLine) {
         switch (parseCommand(psLine, &stCommand)) {
             case PARSE_OK:
-                printString("Command OK\n");
+                executeCommand(pstShip, &stCommand);
                 break;
             case PARSE_BAD_SYNTAX:
                 printString(stCommand.psUsage);
@@ -65,8 +58,12 @@ static void runTerminal(void) {
                 break;
         }
         free(psLine);
-        printString(PROMPT);
-        psLine = readLine(STDIN_FILENO);
+        psLine = NULL;
+        //ships lost at sea end the program without asking for more commands
+        if (SHIP_LOST != pstShip->nState) {
+            printString(PROMPT);
+            psLine = readLine(STDIN_FILENO);
+        }
     }
     free(psLine);
     printString("\n");
@@ -75,6 +72,7 @@ static void runTerminal(void) {
 int main(int argc, char *argv[]) {
 
     OdysseusConfig stConfig;
+    Ship stShip;
     char *psMessage = NULL;
 
     if (2 != argc) {
@@ -84,7 +82,7 @@ int main(int argc, char *argv[]) {
     if (-1 == loadOdysseusConfig(argv[1], &stConfig)) {
         return 1;
     }
-    if (SIG_ERR == signal(SIGINT, handleInterrupt)) {
+    if (SIG_ERR == signal(SIGINT, handleInterrupt) || SIG_ERR == signal(SIGPIPE, SIG_IGN)) {
         printError("Error: could not install the CTRL+C handler.\n");
         freeOdysseusConfig(&stConfig);
         return 1;
@@ -94,7 +92,11 @@ int main(int argc, char *argv[]) {
         printString(psMessage);
         free(psMessage);
     }
-    runTerminal();
+    initShip(&stShip, &stConfig);
+    runTerminal(&stShip);
+
+    leavePort(&stShip);
+    freeShip(&stShip);
 
     freeOdysseusConfig(&stConfig);
     return 0;

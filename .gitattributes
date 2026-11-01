@@ -1,0 +1,6 @@
+# keep LF line endings on every OS (Windows checkouts break the config files)
+* text=auto eol=lf
+*.db binary
+*.o binary
+*.png binary
+*.jpg binary

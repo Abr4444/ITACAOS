@@ -13,8 +13,7 @@ static void showStatus(Ship *pstShip) {
 
     for (i = 0; NULL != psName && '\0' != psName[i]; i++)
         psName[i] = toupper((unsigned char) psName[i]);
-    if (-1 != asprintf(&psMessage, "--- %s ---\nGold: %d\n\nCargo:\n",
-                       (NULL != psName) ? psName : pstConfig->psName, pstShip->nGold)) {
+    if (NULL != psName && -1 != asprintf(&psMessage, "--- %s ---\nGold: %d\n\nCargo:\n", psName, pstShip->nGold)) {
         printString(psMessage);
         free(psMessage);
     }
@@ -91,8 +90,20 @@ void executeCommand(Ship *pstShip, Command *pstCommand) {
         case CMD_SAIL:
             sail(pstShip, pstCommand->psArgument);
             break;
+        case CMD_LIST_MARKET:
+            listMarket(pstShip);
+            break;
+        case CMD_BUY:
+            buy(pstShip, pstCommand->psArgument, pstCommand->nNumber);
+            break;
+        case CMD_SELL:
+            sell(pstShip, pstCommand->psArgument, pstCommand->nNumber);
+            break;
         case CMD_BUY_MAP:
             buyMap(pstShip);
+            break;
+        case CMD_MAP:
+            showMap(&pstShip->stMap);
             break;
         default:
             // Implemented by the next steps of the phase

@@ -165,7 +165,9 @@ static int toVoyageId(char *psText) {
             return -1;
         nId = nId * 10 + (psText[i] - '0');
     }
-    return (0 == nId) ? -1 : nId;
+    if (0 == nId)
+        return -1;
+    return nId;
 }
 
 /************************************************

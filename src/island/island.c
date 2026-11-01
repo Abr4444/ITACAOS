@@ -17,15 +17,10 @@
 //listening socket, shut down by CTRL+C
 int gnServerFd = -1;
 
-/************************************************
- *
- * @Name: handleInterrupt
- * @Def: SIGINT (CTRL+C) handler: it shuts the listening socket down, which
- *       makes the blocked accept() fail and the server start closing.
+/* @Name: handleInterrupt
+ * @Def: CTRL+C: shuts the listening socket down to stop the server.
  * @Arg: In: nSignal = signal received (unused)
- * @Ret: -
- *
- ************************************************/
+ * @Ret: - */
 void handleInterrupt(int nSignal) {
 
     (void) nSignal;
@@ -37,6 +32,7 @@ int main(int argc, char *argv[]) {
     IslandConfig stConfig;
     IslandServer stIsland;
     char *psMessage = NULL;
+    char *psShips = "ships";
 
     if (3 != argc) {
         printError("Usage: ./island <config.dat> <stock.db>\n");
@@ -64,8 +60,11 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    if (1 == stConfig.nCapacity) {
+        psShips = "ship";
+    }
     if (-1 != asprintf(&psMessage, "\nIsland %s initialized.\nPort capacity: %d %s.\n%d sea routes loaded.\n%d products available.\n",
-                    stConfig.psName, stConfig.nCapacity, (1 == stConfig.nCapacity) ? "ship" : "ships",
+                    stConfig.psName, stConfig.nCapacity, psShips,
                     stConfig.nNumRoutes, stConfig.nNumProducts)) {
         printString(psMessage);
         free(psMessage);

@@ -1,4 +1,5 @@
 #include "map.h"
+#include "sphragis.h"
 
 
 /************************************************
@@ -118,6 +119,35 @@ void chartRoute(Map *pstMap, char *psFrom, char *psName, char *psIp, int nPort) 
     if (NULL == pstTo || NULL == pstFrom || -1 == addRoute(pstFrom, pstTo->psName) ||
         -1 == addRoute(pstTo, pstFrom->psName))
         printString("Error: not enough memory to chart the route.\n");
+}
+
+/* @Name: showMap
+ * @Def: MAP: draws the known islands and routes with SPHRAGIS.
+ * @Arg: In: pstMap = the ship's map (Aeaea first)
+ * @Ret: - */
+void showMap(Map *pstMap) {
+
+    SPHRAGIS_Island *pstIslands = NULL;
+    int nResult = 0;
+    int i = 0;
+
+    pstIslands = malloc(pstMap->nNumIslands * sizeof(SPHRAGIS_Island));
+    if (NULL == pstIslands) {
+        printString("Error: not enough memory to show the map.\n");
+        return;
+    }
+    for (i = 0; i < pstMap->nNumIslands; i++) {
+        pstIslands[i].name = pstMap->pstIslands[i].psName;
+        pstIslands[i].known_islands = pstMap->pstIslands[i].ppsRoutes;
+        pstIslands[i].known_island_count = pstMap->pstIslands[i].nNumRoutes;
+    }
+
+    // A terminal under 80 columns (SPHRAGIS_ERROR) is already explained by SPHRAGIS
+    nResult = SPHRAGIS_display_map(pstIslands, pstMap->nNumIslands);
+    if (SPHRAGIS_OK != nResult && SPHRAGIS_ERROR != nResult) {
+        printString("Error: SPHRAGIS could not show the map.\n");
+    }
+    free(pstIslands);
 }
 
 /************************************************

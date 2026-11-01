@@ -34,6 +34,7 @@ void initMap(Map *pstMap);
 KnownIsland *findIsland(Map *pstMap, char *psName);
 KnownIsland *addIsland(Map *pstMap, char *psName, char *psIp, int nPort);
 void chartRoute(Map *pstMap, char *psFrom, char *psName, char *psIp, int nPort);
+void showMap(Map *pstMap);
 void freeMap(Map *pstMap);
 
 #endif

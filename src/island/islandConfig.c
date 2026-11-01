@@ -1,11 +1,8 @@
 /************************************************
- *
  * @File: islandConfig.c
  * @Purpose: Loads and frees the configuration of an Island process
  *           (island.dat with its routes) and its market (stock.db).
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 30/09/2026
- *
  ************************************************/
 
 #include "islandConfig.h"

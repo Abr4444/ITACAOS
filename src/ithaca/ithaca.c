@@ -1,11 +1,8 @@
 /************************************************
- *
  * @File: ithaca.c
  * @Purpose: Ithaca process (central server).
  *           Usage: ./ithaca <config.dat> <voyages.dat>
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 03/10/2026
- *
  ************************************************/
 
 #define _GNU_SOURCE
@@ -19,14 +16,12 @@
 int gnServerFd = -1;
 
 /************************************************
- *
  * @Name: handleInterrupt
  * @Def: SIGINT (CTRL+C) handler. signal() restarts an interrupted
  *       accept(), so a flag would never be checked. Shutting the
  *       listening socket down makes accept() fail and the accept loop end.
  * @Arg: In: nSignal = signal received (unused)
  * @Ret: -
- *
  ************************************************/
 void handleInterrupt(int nSignal) {
 

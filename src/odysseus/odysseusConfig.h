@@ -2,13 +2,10 @@
 #define __ODYSSEUS_CONFIG_H__
 
 /************************************************
- *
  * @File: odysseusConfig.h
  * @Purpose: Loads and frees the configuration of an Odysseus process
  *           (odysseus.dat).
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 28/09/2026
- *
  ************************************************/
 
 #include "io.h"

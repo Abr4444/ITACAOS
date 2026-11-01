@@ -1,6 +1,12 @@
 #ifndef __SHIP_H__
 #define __SHIP_H__
 
+/************************************************
+ * @File: ship.h
+ * @Purpose: Odysseus's state, STATUS and the dispatcher of the terminal commands.
+ * @Date: 28/10/2026
+ ************************************************/
+
 #include "odysseusConfig.h"
 #include "terminal.h"
 #include "frame.h"

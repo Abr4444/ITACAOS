@@ -1,5 +1,17 @@
+/************************************************
+ * @File: frame.c
+ * @Purpose: Fixed 256-byte frames of the protocol: send, receive, check and NACK.
+ * @Date: 25/10/2026
+ ************************************************/
+
 #include "frame.h"
 
+/* @Name: sendFrame
+ * @Def: Serializes a frame and sends it with one write of 256 bytes.
+ * @Arg: In: nFd = socket
+ *       In: nType, nFlags = header of the frame
+ *       In: psData = text of the frame, or NULL
+ * @Ret: 0 on success, -1 on error */
 int sendFrame(int nFd, int nType, int nFlags, char* psData){
     unsigned char aucFrame[FRAME_SIZE];
     int nLength = 0;
@@ -24,6 +36,11 @@ int sendFrame(int nFd, int nType, int nFlags, char* psData){
     return 0;
 }
 
+/* @Name: receiveFrame
+ * @Def: Reads one whole 256-byte frame and decodes it.
+ * @Arg: In: nFd = socket
+ *       Out: pstFrame = the frame received
+ * @Ret: 0 on success, -1 if the connection closed */
 int receiveFrame(int nFd, Frame *pstFrame) {
     unsigned char aucFrame[FRAME_SIZE];
     int nTotal = 0, nRead = 0;
@@ -46,6 +63,10 @@ int receiveFrame(int nFd, Frame *pstFrame) {
     return 0;
 }
 
+/* @Name: isKnownType
+ * @Def: Tells if a TYPE exists in the protocol.
+ * @Arg: In: nType = type to check
+ * @Ret: 1 if it exists, 0 otherwise */
 int isKnownType(int nType) {
 
     return (TYPE_CONNECT_ITHACA <= nType && TYPE_DISCONNECT_ITHACA >= nType) ||
@@ -53,6 +74,10 @@ int isKnownType(int nType) {
            TYPE_NACK == nType;
 }
 
+/* @Name: checkFrame
+ * @Def: Checks the type, flags, length and data of a frame.
+ * @Arg: In: pstFrame = frame to check
+ * @Ret: The NACK reason, or NULL if the frame is valid */
 char *checkFrame(Frame *pstFrame) {
 
     if(0 == isKnownType(pstFrame->nType))
@@ -73,12 +98,16 @@ char *checkFrame(Frame *pstFrame) {
     return NULL;
 }
 
+/* @Name: sendNack
+ * @Def: Sends a NACK (0x7F) with the reason.
+ * @Arg: In: nFd = socket
+ *       In: psReason = reason of the NACK
+ * @Ret: 0 on success, -1 on error */
 int sendNack(int nFd, char *psReason){
     return sendFrame(nFd, TYPE_NACK, FLAGS_FAIL, psReason);
 }
 
 /************************************************
- *
  * @Name: splitFields
  * @Def: Splits the DATA of a frame on '&'. The data is modified: each
  *       field ends with '\0' and apsFields points into it.
@@ -86,7 +115,6 @@ int sendNack(int nFd, char *psReason){
  *       Out: apsFields = the fields found
  *       In: nMax = number of fields expected
  * @Ret: The number of fields found (at most nMax).
- *
  ************************************************/
 int splitFields(char *psData, char *apsFields[], int nMax) {
 

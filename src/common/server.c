@@ -1,27 +1,22 @@
 /************************************************
- *
  * @File: server.c
  * @Purpose: Pieces shared by the Ithaca and Island servers: the list of
  *           connected clients (one thread each) protected by a mutex,
  *           accepting connections, cleaning up finished threads and
  *           closing every connection on CTRL+C. What each server does
  *           with a client stays in its own thread function.
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 30/10/2026
- *
  ************************************************/
 
 #define _GNU_SOURCE
 #include "server.h"
 
 /************************************************
- *
  * @Name: printClientEvent
  * @Def: Prints a ">>> <name> <event>" line on the server's screen.
  * @Arg: In: psName = name of the Odysseus
  *       In: psEvent = what happened, e.g. "connected to Ithaca."
  * @Ret: -
- *
  ************************************************/
 void printClientEvent(char *psName, char *psEvent) {
 
@@ -34,13 +29,11 @@ void printClientEvent(char *psName, char *psEvent) {
 }
 
 /************************************************
- *
  * @Name: freeClient
  * @Def: Closes the socket of a client whose thread has been joined
  *       and frees it.
  * @Arg: In: pstClient = client to free
  * @Ret: -
- *
  ************************************************/
 static void freeClient(Client *pstClient) {
 
@@ -50,12 +43,10 @@ static void freeClient(Client *pstClient) {
 }
 
 /************************************************
- *
  * @Name: initClientList
  * @Def: Prepares an empty client list and its mutex.
  * @Arg: Out: pstList = the list
  * @Ret: 0 on success, -1 if the mutex could not be created.
- *
  ************************************************/
 int initClientList(ClientList *pstList) {
 
@@ -70,14 +61,12 @@ int initClientList(ClientList *pstList) {
 }
 
 /************************************************
- *
  * @Name: acceptClient
  * @Def: Waits for the next connection. A client that hangs up before
  *       being accepted (ECONNABORTED) is skipped.
  * @Arg: In: nListenFd = listening socket
  * @Ret: The new socket, or -1 when accept fails. errno is EINVAL when
  *       CTRL+C shut the listening socket down.
- *
  ************************************************/
 int acceptClient(int nListenFd) {
 
@@ -90,13 +79,11 @@ int acceptClient(int nListenFd) {
 }
 
 /************************************************
- *
  * @Name: reapClients
  * @Def: Joins and frees the threads that have finished, so a long-running
  *       server does not keep the memory of every ship that ever came.
  * @Arg: In/Out: pstList = the client list
  * @Ret: -
- *
  ************************************************/
 void reapClients(ClientList *pstList) {
 
@@ -120,7 +107,6 @@ void reapClients(ClientList *pstList) {
 }
 
 /************************************************
- *
  * @Name: addClient
  * @Def: Adds a new connection to the list and starts its thread.
  * @Arg: In/Out: pstList = the client list
@@ -129,7 +115,6 @@ void reapClients(ClientList *pstList) {
  *           the new Client as its argument.
  *       In: pOwner = the server the client belongs to, stored in pOwner
  * @Ret: 0 on success, -1 on error (the caller closes nFd).
- *
  ************************************************/
 int addClient(ClientList *pstList, int nFd, void *(*pThread)(void *), void *pOwner) {
 
@@ -167,7 +152,6 @@ int addClient(ClientList *pstList, int nFd, void *(*pThread)(void *), void *pOwn
 }
 
 /************************************************
- *
  * @Name: closeClientList
  * @Def: Closes every connection, waits for all the threads and frees the
  *       list. Shutting a socket down makes its thread's read() fail, so
@@ -175,7 +159,6 @@ int addClient(ClientList *pstList, int nFd, void *(*pThread)(void *), void *pOwn
  *       because each ending thread still needs it for its last step.
  * @Arg: In/Out: pstList = the client list
  * @Ret: -
- *
  ************************************************/
 void closeClientList(ClientList *pstList) {
 

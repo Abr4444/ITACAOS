@@ -1,5 +1,4 @@
 /************************************************
- *
  * @File: islandServer.c
  * @Purpose: An island's server: serves each Odysseus in its own thread,
  *           with the berths of the port, the FIFO queue of ships waiting
@@ -7,9 +6,7 @@
  *           Every request is handled entirely inside stMutex: requests
  *           are short, and a ship waiting offshore blocks in read()
  *           outside the lock, so nobody is stalled.
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 30/10/2026
- *
  ************************************************/
 
 #define _GNU_SOURCE

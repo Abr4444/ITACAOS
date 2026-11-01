@@ -1,10 +1,7 @@
 /************************************************
- *
  * @File: island.c
  * @Purpose: Island process (a port). Usage: ./island <config.dat> <stock.db>
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 03/10/2026
- *
  ************************************************/
 
 #define _GNU_SOURCE

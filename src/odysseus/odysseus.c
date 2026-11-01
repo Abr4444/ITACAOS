@@ -1,10 +1,7 @@
 /************************************************
- *
  * @File: odysseus.c
  * @Purpose: Odysseus process (the ship). Usage: ./odysseus <config.dat>
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 03/10/2026
- *
  ************************************************/
 
 #define _GNU_SOURCE
@@ -17,7 +14,6 @@
 int gnStop = 0;
 
 /************************************************
- *
  * @Name: handleInterrupt
  * @Def: SIGINT (CTRL+C) handler: raises the stop flag and closes stdin.
  *       signal() makes the kernel restart a read() interrupted by CTRL+C,
@@ -25,7 +21,6 @@ int gnStop = 0;
  *       terminal loop end.
  * @Arg: In: nSignal = signal received (unused)
  * @Ret: -
- *
  ************************************************/
 void handleInterrupt(int nSignal) {
 
@@ -35,13 +30,11 @@ void handleInterrupt(int nSignal) {
 }
 
 /************************************************
- *
  * @Name: runTerminal
  * @Def: Reads and parses commands until CTRL+C or end of input.
  *       Phase 1 only checks the syntax, it does not run the command yet.
  * @Arg: -
  * @Ret: -
- *
  ************************************************/
 static void runTerminal(Ship *pstShip) {
 

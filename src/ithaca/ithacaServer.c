@@ -1,26 +1,21 @@
 /************************************************
- *
  * @File: ithacaServer.c
  * @Purpose: Ithaca's server: accepts the Odysseus connections and serves
  *           each one in its own thread, so a slow or blocked Odysseus
  *           never stops the others from being served.
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 30/10/2026
- *
  ************************************************/
 
 #define _GNU_SOURCE
 #include "ithacaServer.h"
 
 /************************************************
- *
  * @Name: isNameInUse
  * @Def: Checks if another connected Odysseus already uses a name.
  *       Must be called with stMutex locked.
  * @Arg: In: pstList = the connected Odysseus
  *       In: psName = name to look for
  * @Ret: 1 if the name is in use, 0 otherwise.
- *
  ************************************************/
 static int isNameInUse(ClientList *pstList, char *psName) {
 
@@ -37,7 +32,6 @@ static int isNameInUse(ClientList *pstList, char *psName) {
 }
 
 /************************************************
- *
  * @Name: identifyClient
  * @Def: Handles the CONNECT ITHACA frame that Odysseus sends right after
  *       opening the connection, and stores its name. Two ships connected
@@ -46,7 +40,6 @@ static int isNameInUse(ClientList *pstList, char *psName) {
  *       In/Out: pstClient = the client, gets psName
  * @Ret: CLIENT_ACTIVE if identified, CLIENT_LEFT if it was refused,
  *       or CLIENT_LOST if the connection broke.
- *
  ************************************************/
 static int identifyClient(IthacaServer *pstIthaca, Client *pstClient) {
 
@@ -97,7 +90,6 @@ static int identifyClient(IthacaServer *pstIthaca, Client *pstClient) {
 }
 
 /************************************************
- *
  * @Name: listVoyages
  * @Def: LIST VOYAGES: sends one frame per available voyage, or "0" if
  *       none is left. An Odysseus that still holds a voyage and asks for
@@ -105,7 +97,6 @@ static int identifyClient(IthacaServer *pstIthaca, Client *pstClient) {
  * @Arg: In/Out: pstIthaca = the server
  *       In: pstClient = the Odysseus that asked
  * @Ret: -
- *
  ************************************************/
 static void listVoyages(IthacaServer *pstIthaca, Client *pstClient) {
 
@@ -148,12 +139,10 @@ static void listVoyages(IthacaServer *pstIthaca, Client *pstClient) {
 }
 
 /************************************************
- *
  * @Name: toVoyageId
  * @Def: Converts the <VoyageID> of an ACCEPT frame.
  * @Arg: In: psText = the DATA of the frame
  * @Ret: The ID, or -1 if it is not a positive number of up to 9 digits.
- *
  ************************************************/
 static int toVoyageId(char *psText) {
 
@@ -171,7 +160,6 @@ static int toVoyageId(char *psText) {
 }
 
 /************************************************
- *
  * @Name: acceptVoyage
  * @Def: ACCEPT: assigns a voyage to the Odysseus if it is still
  *       available. Checking and assigning under the same lock is what
@@ -180,7 +168,6 @@ static int toVoyageId(char *psText) {
  *       In: pstClient = the Odysseus that accepts it
  *       In: pstFrame = the request, with the voyage ID
  * @Ret: -
- *
  ************************************************/
 static void acceptVoyage(IthacaServer *pstIthaca, Client *pstClient, Frame *pstFrame) {
 
@@ -234,13 +221,11 @@ static void acceptVoyage(IthacaServer *pstIthaca, Client *pstClient, Frame *pstF
 }
 
 /************************************************
- *
  * @Name: handleRequest
  * @Def: Answers one request of an identified Odysseus.
  * @Arg: In: pstClient = the client that sent it
  *       In: pstFrame = the request
  * @Ret: CLIENT_LEFT after a DISCONNECT, CLIENT_ACTIVE otherwise.
- *
  ************************************************/
 static int handleRequest(IthacaServer *pstIthaca, Client *pstClient, Frame *pstFrame) {
 
@@ -282,13 +267,11 @@ static int handleRequest(IthacaServer *pstIthaca, Client *pstClient, Frame *pstF
 }
 
 /************************************************
- *
  * @Name: serveOdysseus
  * @Def: Thread of one Odysseus: identifies it, then answers its requests
  *       until it disconnects, its connection breaks, or Ithaca closes.
  * @Arg: In: pArg = the Client to serve
  * @Ret: NULL.
- *
  ************************************************/
 static void *serveOdysseus(void *pArg) {
 
@@ -317,13 +300,11 @@ static void *serveOdysseus(void *pArg) {
 }
 
 /************************************************
- *
  * @Name: initIthacaServer
  * @Def: Prepares Ithaca's server with no Odysseus connected yet.
  * @Arg: Out: pstIthaca = the server
  *       In: pstConfig = the loaded Ithaca configuration
  * @Ret: 0 on success, -1 on error.
- *
  ************************************************/
 int initIthacaServer(IthacaServer *pstIthaca, IthacaConfig *pstConfig) {
 
@@ -340,14 +321,12 @@ int initIthacaServer(IthacaServer *pstIthaca, IthacaConfig *pstConfig) {
 }
 
 /************************************************
- *
  * @Name: runIthacaServer
  * @Def: Accepts Odysseus connections, each one served by its own thread,
  *       until CTRL+C shuts the listening socket down.
  * @Arg: In/Out: pstIthaca = the server
  *       In: nListenFd = listening socket
  * @Ret: -
- *
  ************************************************/
 void runIthacaServer(IthacaServer *pstIthaca, int nListenFd) {
 
@@ -369,12 +348,10 @@ void runIthacaServer(IthacaServer *pstIthaca, int nListenFd) {
 }
 
 /************************************************
- *
  * @Name: closeIthacaServer
  * @Def: Closes every Odysseus connection and frees the server.
  * @Arg: In/Out: pstIthaca = the server
  * @Ret: -
- *
  ************************************************/
 void closeIthacaServer(IthacaServer *pstIthaca) {
 

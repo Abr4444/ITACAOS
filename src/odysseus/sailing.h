@@ -2,13 +2,10 @@
 #define __SAILING_H__
 
 /************************************************
- *
  * @File: sailing.h
  * @Purpose: SAIL: leaving a port, sailing along a known route, docking,
  *           and waiting offshore while the port is full.
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 31/10/2026
- *
  ************************************************/
 
 #include <sys/select.h>

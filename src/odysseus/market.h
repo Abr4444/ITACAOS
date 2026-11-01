@@ -2,12 +2,9 @@
 #define __MARKET_H__
 
 /************************************************
- *
  * @File: market.h
  * @Purpose: Odysseus docked at an island: LIST MARKET, BUY, SELL and BUY MAP.
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 31/10/2026
- *
  ************************************************/
 
 #include "ship.h"

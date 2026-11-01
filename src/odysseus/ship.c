@@ -1,9 +1,19 @@
+/************************************************
+ * @File: ship.c
+ * @Purpose: Odysseus's state, STATUS and the dispatcher of the terminal commands.
+ * @Date: 28/10/2026
+ ************************************************/
+
 #define _GNU_SOURCE
 #include "ship.h"
 #include "voyages.h"
 #include "sailing.h"
 #include "market.h"
 
+/* @Name: showStatus
+ * @Def: STATUS: prints gold, cargo, provisions, voyage and location.
+ * @Arg: In: pstShip = the ship
+ * @Ret: - */
 static void showStatus(Ship *pstShip) {
     OdysseusConfig *pstConfig = pstShip->pstConfig;
     char *psMessage = NULL;
@@ -41,6 +51,10 @@ static void showStatus(Ship *pstShip) {
     }
 }
 
+/* @Name: closeConnection
+ * @Def: Closes the current connection, if there is one.
+ * @Arg: In/Out: pstShip = the ship
+ * @Ret: - */
 void closeConnection(Ship *pstShip) {
     if (-1 != pstShip->nFd) {
         close(pstShip->nFd);
@@ -48,6 +62,11 @@ void closeConnection(Ship *pstShip) {
     }
 }
 
+/* @Name: initShip
+ * @Def: Starts the ship in Ithaca with the config's gold and Aeaea in its map.
+ * @Arg: Out: pstShip = the ship
+ *       In: pstConfig = the configuration
+ * @Ret: - */
 void initShip(Ship *pstShip, OdysseusConfig *pstConfig) {
     pstShip->pstConfig = pstConfig;
     pstShip->nState = SHIP_AT_ITHACA;
@@ -66,6 +85,10 @@ void initShip(Ship *pstShip, OdysseusConfig *pstConfig) {
         printString("Error: not enough memory\n");
 }
 
+/* @Name: freeShip
+ * @Def: Frees the voyage, the listed voyages and the map.
+ * @Arg: In/Out: pstShip = the ship
+ * @Ret: - */
 void freeShip(Ship *pstShip) {
     free(pstShip->psObject);
     free(pstShip->psDestination);
@@ -73,6 +96,11 @@ void freeShip(Ship *pstShip) {
     freeMap(&pstShip->stMap);
 }
 
+/* @Name: executeCommand
+ * @Def: Runs a parsed terminal command.
+ * @Arg: In/Out: pstShip = the ship
+ *       In: pstCommand = the command
+ * @Ret: - */
 void executeCommand(Ship *pstShip, Command *pstCommand) {
     switch (pstCommand->nType) {
         case CMD_CONNECT_ITHACA:

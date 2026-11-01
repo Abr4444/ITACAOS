@@ -2,12 +2,9 @@
 #define __VOYAGES_H__
 
 /************************************************
- *
  * @File: voyages.h
  * @Purpose: Odysseus with Ithaca: CONNECT ITHACA, LIST VOYAGES and ACCEPT.
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 31/10/2026
- *
  ************************************************/
 
 #include "ship.h"

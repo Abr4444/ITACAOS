@@ -1,28 +1,30 @@
+/************************************************
+ * @File: map.c
+ * @Purpose: The ship's map: known islands, their addresses and routes, and MAP.
+ * @Date: 31/10/2026
+ ************************************************/
+
 #include "map.h"
 #include "sphragis.h"
 
 
 /************************************************
- *
  * @Name: initMap
  * @Def: Starts an empty map.
  * @Arg: Out: pstMap = the map
  * @Ret: -
- *
  ************************************************/
 void initMap(Map *pstMap) {
     pstMap->pstIslands = NULL;
     pstMap->nNumIslands = 0;
 }
 /************************************************
- *
  * @Name: findIsland
  * @Def: Looks for an island in the ship's map. Island names are case
  *       insensitive, like the commands.
  * @Arg: In: pstMap = the ship's map
  *       In: psName = name of the island
  * @Ret: The island, or NULL if the ship does not know it.
- *
  ************************************************/
 KnownIsland *findIsland(Map *pstMap, char *psName) {
 
@@ -36,7 +38,6 @@ KnownIsland *findIsland(Map *pstMap, char *psName) {
 }
 
 /************************************************
- *
  * @Name: addIsland
  * @Def: Adds an island and its address to the ship's map, if the ship
  *       does not know it yet.
@@ -45,7 +46,6 @@ KnownIsland *findIsland(Map *pstMap, char *psName) {
  *       In: psIp = IP of its Island process
  *       In: nPort = port of its Island process
  * @Ret: The island, or NULL if there was no memory.
- *
  ************************************************/
 KnownIsland *addIsland(Map *pstMap, char *psName, char *psIp, int nPort) {
 
@@ -75,14 +75,12 @@ KnownIsland *addIsland(Map *pstMap, char *psName, char *psIp, int nPort) {
 }
 
 /************************************************
- *
  * @Name: addRoute
  * @Def: Adds a direct route to an island of the map, if it is not there
  *       yet. The route stores a pointer to the other island's own name.
  * @Arg: In/Out: pstIsland = island the route starts from
  *       In: psName = name of the island it leads to (owned by that island)
  * @Ret: 0 on success, -1 if there was no memory.
- *
  ************************************************/
 static int addRoute(KnownIsland *pstIsland, char *psName) {
     char **ppsMore = NULL;
@@ -100,7 +98,6 @@ static int addRoute(KnownIsland *pstIsland, char *psName) {
     return 0;
 }
 /************************************************
- *
  * @Name: chartRoute
  * @Def: Adds a route of the map just bought to the ship's map, in both
  *       directions, because all routes are bidirectional.
@@ -110,7 +107,6 @@ static int addRoute(KnownIsland *pstIsland, char *psName) {
  *       In: psIp = IP of that island
  *       In: nPort = port of that island
  * @Ret: -
- *
  ************************************************/
 void chartRoute(Map *pstMap, char *psFrom, char *psName, char *psIp, int nPort) {
     KnownIsland *pstTo = addIsland(pstMap, psName, psIp, nPort);
@@ -150,13 +146,11 @@ void showMap(Map *pstMap) {
 }
 
 /************************************************
- *
  * @Name: freeMap
  * @Def: Frees the map. ppsRoutes only points to the names of other
  *       islands, so each name is freed once, with its own island.
  * @Arg: In/Out: pstMap = the map
  * @Ret: -
- *
  ************************************************/
 void freeMap(Map *pstMap) {
     for (int i = 0; i < pstMap->nNumIslands; i++) {

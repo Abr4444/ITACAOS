@@ -1,24 +1,19 @@
 /************************************************
- *
  * @File: odysseusConfig.c
  * @Purpose: Loads and frees the configuration of an Odysseus process
  *           (odysseus.dat).
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 28/09/2026
- *
  ************************************************/
 
 #include "odysseusConfig.h"
 
 /************************************************
- *
  * @Name: loadOdysseusConfig
  * @Def: Reads odysseus.dat into an OdysseusConfig. The file format is
  *       assumed correct (p.18).
  * @Arg: In: psPath = path of the config file
  *       Out: pstConfig = the loaded configuration
  * @Ret: 0 on success, -1 on error (nothing is left allocated).
- *
  ************************************************/
 int loadOdysseusConfig(char *psPath, OdysseusConfig *pstConfig) {
 
@@ -76,12 +71,10 @@ int loadOdysseusConfig(char *psPath, OdysseusConfig *pstConfig) {
 }
 
 /************************************************
- *
  * @Name: freeOdysseusConfig
  * @Def: Frees everything loadOdysseusConfig allocated.
  * @Arg: In/Out: pstConfig = configuration to free
  * @Ret: -
- *
  ************************************************/
 void freeOdysseusConfig(OdysseusConfig *pstConfig) {
 

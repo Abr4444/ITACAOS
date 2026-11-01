@@ -1,14 +1,18 @@
+/************************************************
+ * @File: voyages.c
+ * @Purpose: Odysseus with Ithaca: CONNECT ITHACA, LIST VOYAGES and ACCEPT.
+ * @Date: 31/10/2026
+ ************************************************/
+
 #define _GNU_SOURCE
 #include "voyages.h"
 
 /************************************************
- *
  * @Name: lostIthaca
  * @Def: Ithaca stopped answering (it crashed or closed): the ship
  *       forgets the connection and stays in Ithaca's harbor.
  * @Arg: In/Out: pstShip = the ship
  * @Ret: -
- *
  ************************************************/
 static void lostIthaca(Ship *pstShip) {
     printString("Error: lost the connection with Ithaca.\n");
@@ -17,12 +21,10 @@ static void lostIthaca(Ship *pstShip) {
 }
 
 /************************************************
- *
  * @Name: forgetListedVoyages
  * @Def: Empties the IDs of the last LIST VOYAGES.
  * @Arg: In/Out: pstShip = the ship
  * @Ret: -
- *
  ************************************************/
 void forgetListedVoyages(Ship *pstShip) {
 
@@ -31,13 +33,11 @@ void forgetListedVoyages(Ship *pstShip) {
     pstShip->nNumListed = 0;
 }
 /************************************************
- *
  * @Name: canAskForVoyage
  * @Def: LIST VOYAGES and ACCEPT only work while connected to Ithaca and
  *       without an active voyage.
  * @Arg: In: pstShip = the ship
  * @Ret: 1 if the command can run, 0 otherwise (the reason is printed).
- *
  ************************************************/
 static int canAskForVoyage(Ship *pstShip) {
 
@@ -51,6 +51,10 @@ static int canAskForVoyage(Ship *pstShip) {
     }
     return 1;
 }
+/* @Name: connectIthaca
+ * @Def: CONNECT ITHACA: connects and identifies with the ship's name.
+ * @Arg: In/Out: pstShip = the ship
+ * @Ret: - */
 void connectIthaca(Ship *pstShip) {
     OdysseusConfig *pstConfig = pstShip->pstConfig;
     Frame stFrame;
@@ -89,13 +93,11 @@ void connectIthaca(Ship *pstShip) {
     printString("Connected to Ithaca.\n");
 }
 /************************************************
- *
  * @Name: rememberVoyageId
  * @Def: Adds a voyage ID to the list of the last LIST VOYAGES.
  * @Arg: In/Out: pstShip = the ship
  *       In: nId = the voyage ID
  * @Ret: -
- *
  ************************************************/
 static void rememberVoyageId(Ship *pstShip, int nId) {
 
@@ -111,14 +113,12 @@ static void rememberVoyageId(Ship *pstShip, int nId) {
 }
 
 /************************************************
- *
  * @Name: listVoyages
  * @Def: LIST VOYAGES: asks Ithaca for the available voyages and prints
  *       them. Ithaca sends one frame per voyage ("Index&Total&...")
  *       or a single "0" if there are none.
  * @Arg: In/Out: pstShip = the ship, remembers the IDs listed
  * @Ret: -
- *
  ************************************************/
 void listVoyages(Ship *pstShip) {
 
@@ -164,13 +164,11 @@ void listVoyages(Ship *pstShip) {
     }
 }
 /************************************************
- *
  * @Name: isListedVoyage
  * @Def: Checks if a voyage was in the last LIST VOYAGES.
  * @Arg: In: pstShip = the ship
  *       In: nId = the voyage ID
  * @Ret: 1 if it was listed, 0 otherwise.
- *
  ************************************************/
 static int isListedVoyage(Ship *pstShip, int nId) {
     for (int i = 0; i < pstShip->nNumListed; i++)
@@ -180,14 +178,12 @@ static int isListedVoyage(Ship *pstShip, int nId) {
 }
 
 /************************************************
- *
  * @Name: acceptVoyage
  * @Def: ACCEPT id: asks Ithaca to assign a voyage of the last
  *       LIST VOYAGES to this ship, and stores it as the active voyage.
  * @Arg: In/Out: pstShip = the ship
  *       In: nId = the voyage ID
  * @Ret: -
- *
  ************************************************/
 void acceptVoyage(Ship *pstShip, int nId) {
     Frame stFrame;

@@ -2,14 +2,11 @@
 #define __ITHACA_SERVER_H__
 
 /************************************************
- *
  * @File: ithacaServer.h
  * @Purpose: Ithaca's server: accepts the Odysseus connections and serves
  *           each one in its own thread, so a slow or blocked Odysseus
  *           never stops the others from being served.
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 30/10/2026
- *
  ************************************************/
 
 #include "ithacaConfig.h"

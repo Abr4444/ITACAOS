@@ -2,16 +2,13 @@
 #define __SERVER_H__
 
 /************************************************
- *
  * @File: server.h
  * @Purpose: Pieces shared by the Ithaca and Island servers: the list of
  *           connected clients (one thread each) protected by a mutex,
  *           accepting connections, cleaning up finished threads and
  *           closing every connection on CTRL+C. What each server does
  *           with a client stays in its own thread function.
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 30/10/2026
- *
  ************************************************/
 
 #include <errno.h>

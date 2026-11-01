@@ -1,8 +1,13 @@
+/************************************************
+ * @File: sailing.c
+ * @Purpose: SAIL: leaving a port, sailing a known route, docking and waiting offshore.
+ * @Date: 31/10/2026
+ ************************************************/
+
 #define _GNU_SOURCE
 #include "sailing.h"
 
 /************************************************
- *
  * @Name: findRoute
  * @Def: SAIL is only valid along a direct route of the current location:
  *       from Ithaca only to Aeaea, from an island only to the islands
@@ -10,7 +15,6 @@
  * @Arg: In: pstShip = the ship
  *       In: psName = island the user wants to sail to
  * @Ret: The destination, or NULL if there is no known direct route.
- *
  ************************************************/
 static KnownIsland *findRoute(Ship *pstShip, char *psName) {
     KnownIsland *pstFrom = NULL;
@@ -28,14 +32,12 @@ static KnownIsland *findRoute(Ship *pstShip, char *psName) {
     return NULL;
 }
 /************************************************
- *
  * @Name: eatRation
  * @Def: The crew eats RATION_KG kg, taken from the cargo in order: when a
  *       food runs out, the rest comes from the next one. If there is less
  *       than a full ration, they eat what is left.
  * @Arg: In/Out: pstConfig = the configuration that holds the cargo
  * @Ret: The provisions left, in kg.
- *
  ************************************************/
 static int eatRation(OdysseusConfig *pstConfig) {
 
@@ -54,7 +56,6 @@ static int eatRation(OdysseusConfig *pstConfig) {
     return nLeft;
 }
 /************************************************
- *
  * @Name: waitForBerth
  * @Def: The port is full: waits offshore until the island sends DOCKED.
  *       select() sleeps until the island writes or RATION_SECONDS pass,
@@ -63,7 +64,6 @@ static int eatRation(OdysseusConfig *pstConfig) {
  * @Arg: In/Out: pstShip = the ship, connected to the island
  *       In: pstIsland = the island it waits for
  * @Ret: 1 if the ship docked, 0 otherwise (the connection is closed).
- *
  ************************************************/
 static int waitForBerth(Ship *pstShip, KnownIsland *pstIsland) {
 
@@ -120,14 +120,12 @@ static int waitForBerth(Ship *pstShip, KnownIsland *pstIsland) {
     return nDocked;
 }
 /************************************************
- *
  * @Name: arriveAt
  * @Def: Connects to an island and asks to dock (ARRIVAL). 
  *       The island answers DOCKED, or WAIT if its port is full and DOCKED later.
  * @Arg: In/Out: pstShip = the ship
  *       In: pstIsland = the island it sails to
  * @Ret: -
- *
  ************************************************/
 static void arriveAt(Ship *pstShip, KnownIsland *pstIsland) {
 
@@ -183,14 +181,12 @@ static void arriveAt(Ship *pstShip, KnownIsland *pstIsland) {
     }
 }
 /************************************************
- *
  * @Name: sail
  * @Def: SAIL <island>: leaves the current place and sails to an island
  *       with a known direct route. It works with or without a voyage.
  * @Arg: In/Out: pstShip = the ship
  *       In: psName = island to sail to
  * @Ret: -
- *
  ************************************************/
 void sail(Ship *pstShip, char *psName) {
     KnownIsland *pstIsland = findRoute(pstShip, psName);
@@ -212,14 +208,12 @@ void sail(Ship *pstShip, char *psName) {
 }
 
 /************************************************
- *
  * @Name: leavePort
  * @Def: Says goodbye to the place the ship is connected to (0x05 to
  *       Ithaca, 0x16 to an island) and closes the connection. If the
  *       other side has crashed, the goodbye fails and closing is enough.
  * @Arg: In/Out: pstShip = the ship
  * @Ret: -
- *
  ************************************************/
 void leavePort(Ship *pstShip) {
     Frame stFrame;

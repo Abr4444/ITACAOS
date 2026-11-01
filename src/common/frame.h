@@ -1,6 +1,12 @@
 #ifndef __FRAME_H__
 #define __FRAME_H__
 
+/************************************************
+ * @File: frame.h
+ * @Purpose: Fixed 256-byte frames of the protocol: send, receive, check and NACK.
+ * @Date: 25/10/2026
+ ************************************************/
+
 #include <string.h>
 #include <unistd.h>
 

@@ -1,24 +1,19 @@
 /************************************************
- *
  * @File: terminal.c
  * @Purpose: Parser of the Odysseus command terminal. Recognizes the
  *           commands (case insensitive), checks their syntax and
  *           extracts their arguments.
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 02/10/2026
- *
  ************************************************/
 
 #include "terminal.h"
 
 /************************************************
- *
  * @Name: sameWord
  * @Def: Compares a typed word with an uppercase keyword, ignoring case.
  * @Arg: In: psWord = word typed by the user (may be NULL)
  *       In: psKeyword = keyword in uppercase
  * @Ret: 1 if they match, 0 otherwise.
- *
  ************************************************/
 static int sameWord(char *psWord, char *psKeyword) {
 
@@ -34,13 +29,11 @@ static int sameWord(char *psWord, char *psKeyword) {
 }
 
 /************************************************
- *
  * @Name: toNumber
  * @Def: Converts a word made only of digits into an int.
  * @Arg: In: psWord = word to convert (may be NULL)
  * @Ret: The value, or -1 if the word is missing, has a non-digit
  *       character or is too long to fit in an int.
- *
  ************************************************/
 static int toNumber(char *psWord) {
 
@@ -61,14 +54,12 @@ static int toNumber(char *psWord) {
 }
 
 /************************************************
- *
  * @Name: splitWords
  * @Def: Splits the line into words separated by spaces or tabs.
  *       The line is modified (strtok).
  * @Arg: In/Out: psLine = line typed by the user
  *       Out: apsWords = first MAX_WORDS words, unused slots set to NULL
  * @Ret: The total number of words, which may exceed MAX_WORDS.
- *
  ************************************************/
 static int splitWords(char *psLine, char **apsWords) {
 
@@ -91,7 +82,6 @@ static int splitWords(char *psLine, char **apsWords) {
 }
 
 /************************************************
- *
  * @Name: setResult
  * @Def: Stores the command type and its usage text, and turns the
  *       validity check into a parse result.
@@ -100,7 +90,6 @@ static int splitWords(char *psLine, char **apsWords) {
  *       In: psUsage = expected syntax of that command
  *       In: nIsValid = 1 if the syntax was correct, 0 otherwise
  * @Ret: PARSE_OK or PARSE_BAD_SYNTAX.
- *
  ************************************************/
 static int setResult(Command *pstCommand, int nType, char *psUsage, int nIsValid) {
 
@@ -113,14 +102,12 @@ static int setResult(Command *pstCommand, int nType, char *psUsage, int nIsValid
 }
 
 /************************************************
- *
  * @Name: parseList
  * @Def: Parses LIST VOYAGES and LIST MARKET.
  * @Arg: In: apsWords = words of the line
  *       In: nWords = number of words
  *       Out: pstCommand = parsed command
  * @Ret: PARSE_OK or PARSE_BAD_SYNTAX.
- *
  ************************************************/
 static int parseList(char **apsWords, int nWords, Command *pstCommand) {
 
@@ -134,7 +121,6 @@ static int parseList(char **apsWords, int nWords, Command *pstCommand) {
 }
 
 /************************************************
- *
  * @Name: parseTrade
  * @Def: Parses BUY <PRODUCT> <AMOUNT>, SELL <PRODUCT> <AMOUNT> and
  *       BUY MAP 1 (the only valid amount for a map).
@@ -144,7 +130,6 @@ static int parseList(char **apsWords, int nWords, Command *pstCommand) {
  *       In: nType = CMD_BUY or CMD_SELL
  *       In: psUsage = expected syntax of that command
  * @Ret: PARSE_OK or PARSE_BAD_SYNTAX.
- *
  ************************************************/
 static int parseTrade(char **apsWords, int nWords, Command *pstCommand, int nType, char *psUsage) {
 
@@ -158,7 +143,6 @@ static int parseTrade(char **apsWords, int nWords, Command *pstCommand, int nTyp
 }
 
 /************************************************
- *
  * @Name: parseSimpleCommand
  * @Def: Parses the commands without user-given arguments:
  *       CONNECT ITHACA, LIST ..., MAP, STATUS, DELIVER and CLAIM.
@@ -167,7 +151,6 @@ static int parseTrade(char **apsWords, int nWords, Command *pstCommand, int nTyp
  *       Out: pstCommand = parsed command
  * @Ret: PARSE_OK, PARSE_BAD_SYNTAX, or PARSE_UNKNOWN if the first
  *       word is none of these commands.
- *
  ************************************************/
 static int parseSimpleCommand(char **apsWords, int nWords, Command *pstCommand) {
 
@@ -194,7 +177,6 @@ static int parseSimpleCommand(char **apsWords, int nWords, Command *pstCommand) 
 }
 
 /************************************************
- *
  * @Name: parseArgumentCommand
  * @Def: Parses the commands with user-given arguments:
  *       ACCEPT, SAIL, BUY and SELL.
@@ -203,7 +185,6 @@ static int parseSimpleCommand(char **apsWords, int nWords, Command *pstCommand) 
  *       Out: pstCommand = parsed command
  * @Ret: PARSE_OK, PARSE_BAD_SYNTAX, or PARSE_UNKNOWN if the first
  *       word is none of these commands.
- *
  ************************************************/
 static int parseArgumentCommand(char **apsWords, int nWords, Command *pstCommand) {
 
@@ -225,7 +206,6 @@ static int parseArgumentCommand(char **apsWords, int nWords, Command *pstCommand
 }
 
 /************************************************
- *
  * @Name: parseCommand
  * @Def: Recognizes a terminal line and validates its syntax.
  *       The line is modified and the command's psArgument points
@@ -234,7 +214,6 @@ static int parseArgumentCommand(char **apsWords, int nWords, Command *pstCommand
  *       Out: pstCommand = parsed command
  * @Ret: PARSE_OK, PARSE_BAD_SYNTAX (see pstCommand->psUsage),
  *       PARSE_UNKNOWN, or PARSE_EMPTY for a blank line.
- *
  ************************************************/
 int parseCommand(char *psLine, Command *pstCommand) {
 

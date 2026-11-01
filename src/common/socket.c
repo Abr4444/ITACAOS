@@ -1,5 +1,17 @@
+/************************************************
+ * @File: socket.c
+ * @Purpose: Opens TCP connections: listening sockets and client connections.
+ * @Date: 25/10/2026
+ ************************************************/
+
 #include "socket.h"
 
+/* @Name: fillAddress
+ * @Def: Fills an IPv4 address from an IP and a port.
+ * @Arg: In: psIp = IP as text
+ *       In: nPort = port
+ *       Out: pstAddress = the address
+ * @Ret: 0 on success, -1 if the IP is not valid */
 static int fillAddress(char *psIp, int nPort, struct sockaddr_in *pstAddress) {
 
     memset(pstAddress, 0, sizeof(struct sockaddr_in));
@@ -11,6 +23,11 @@ static int fillAddress(char *psIp, int nPort, struct sockaddr_in *pstAddress) {
     return 0;
 }
 
+/* @Name: openClientConn
+ * @Def: Connects to a server.
+ * @Arg: In: psIp = IP of the server
+ *       In: nPort = port of the server
+ * @Ret: The socket, or -1 on error */
 int openClientConn(char *psIp, int nPort) {
 
     struct sockaddr_in stAddress;
@@ -30,6 +47,11 @@ int openClientConn(char *psIp, int nPort) {
     return nFd;
 }
 
+/* @Name: openListenConn
+ * @Def: Opens a listening socket on an IP and port.
+ * @Arg: In: psIp = IP to listen on
+ *       In: nPort = port to listen on
+ * @Ret: The socket, or -1 on error */
 int openListenConn(char *psIp, int nPort) {
 
     struct sockaddr_in stAddress;

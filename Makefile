@@ -1,7 +1,6 @@
 #################################################
 #
 # Nostos System - Makefile
-# Authors: Stefan Radulescu, Albert Baiget Rodulfo
 #
 # make          builds ithaca, island and odysseus
 # make clean    removes the object files and the executables

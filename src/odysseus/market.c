@@ -1,3 +1,9 @@
+/************************************************
+ * @File: market.c
+ * @Purpose: Odysseus docked at an island: LIST MARKET, BUY, SELL and BUY MAP.
+ * @Date: 31/10/2026
+ ************************************************/
+
 #define _GNU_SOURCE
 #include "market.h"
 

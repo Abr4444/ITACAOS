@@ -2,13 +2,10 @@
 #define __MAP_H__
 
 /************************************************
- *
  * @File: map.h
  * @Purpose: The ship's map: the islands it knows, where their Island
  *           processes are and the direct routes between them.
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 31/10/2026
- *
  ************************************************/
 
 #include <stdlib.h>

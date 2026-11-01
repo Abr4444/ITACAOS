@@ -2,13 +2,10 @@
 #define __IO_H__
 
 /************************************************
- *
  * @File: io.h
  * @Purpose: Input/output helpers shared by Odysseus, Ithaca and Island.
  *           Only read() and write() are used, as the statement requires.
- * @Author: Stefan Radulescu, Albert Baiget Rodulfo
  * @Date: 28/09/2026
- *
  ************************************************/
 
 // System includes

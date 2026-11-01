@@ -1,4 +1,5 @@
 # Nostos System - Phase 2 (G18)
+
 ## Compile
 
 ```bash
@@ -7,9 +8,6 @@ make clean    # removes the object files and the executables
 ```
 
 ## Execute
-
-Ithaca and Aeaea run on different machines (IPs in `data/configs/*.dat`). Start the servers first.
-
 ```bash
 # Montserrat
 ./ithaca data/configs/ithaca.dat data/voyages.dat
@@ -20,3 +18,10 @@ Ithaca and Aeaea run on different machines (IPs in `data/configs/*.dat`). Start 
 ```
 
 Every process ends with CTRL+C.
+
+## Execute with valgrind
+```bash
+valgrind --leak-check=full --show-leak-kinds=all ./ithaca data/configs/ithaca.dat data/voyages.dat
+valgrind --leak-check=full --show-leak-kinds=all ./island data/configs/island.dat data/island_stock/Aeaea.db
+valgrind --leak-check=full --show-leak-kinds=all ./odysseus data/configs/odysseus.dat
+```

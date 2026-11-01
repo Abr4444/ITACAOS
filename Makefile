@@ -14,7 +14,7 @@ CFLAGS = -Wall -Wextra -g -pthread -Isrc/common -Ilib
 SRC = src
 OBJ = obj
 
-GROUP = Gx
+GROUP = G18
 PHASE = F2
 
 # Headers that many modules include

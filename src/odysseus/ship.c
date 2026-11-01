@@ -61,7 +61,7 @@ void initShip(Ship *pstShip, OdysseusConfig *pstConfig) {
     pstShip->pnListedIds = NULL;
     pstShip->nNumListed = 0;
     initMap(&pstShip->stMap);
-    //Every voyage begins there
+    // voyages begins there
     if (NULL == addIsland(&pstShip->stMap, pstConfig->psAeaeaName, pstConfig->psAeaeaIp, pstConfig->nAeaeaPort))
         printString("Error: not enough memory\n");
 }

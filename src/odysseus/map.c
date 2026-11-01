@@ -142,7 +142,6 @@ void showMap(Map *pstMap) {
         pstIslands[i].known_island_count = pstMap->pstIslands[i].nNumRoutes;
     }
 
-    // A terminal under 80 columns (SPHRAGIS_ERROR) is already explained by SPHRAGIS
     nResult = SPHRAGIS_display_map(pstIslands, pstMap->nNumIslands);
     if (SPHRAGIS_OK != nResult && SPHRAGIS_ERROR != nResult) {
         printString("Error: SPHRAGIS could not show the map.\n");

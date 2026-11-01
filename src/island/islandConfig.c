@@ -65,7 +65,6 @@ static int filterRoutes(IslandConfig *pstConfig) {
             return -1;
         }
     }
-    // Each name is the start of its own malloc'd line, so SPHRAGIS can free the rejected ones
     for (i = 0; i < pstConfig->nNumRoutes; i++) {
         stIsland.known_islands[i] = pstConfig->pstRoutes[i].psName;
     }

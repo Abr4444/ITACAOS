@@ -154,7 +154,7 @@ void listVoyages(Ship *pstShip) {
         } else if (LIST_VOYAGE_FIELDS == splitFields(stFrame.sData, apsFields, LIST_VOYAGE_FIELDS)) {
             nTotal = atoi(apsFields[1]);
             rememberVoyageId(pstShip, atoi(apsFields[2]));
-            if (-1 != asprintf(&psMessage, "%s. %-18s -> %-14s [%s]\n", apsFields[2], apsFields[3], apsFields[4], apsFields[5])) {
+            if (-1 != asprintf(&psMessage, "%s. %-22s -> %-10s [%s]\n", apsFields[2], apsFields[3], apsFields[4], apsFields[5])) {
                 printString(psMessage);
                 free(psMessage);
             }

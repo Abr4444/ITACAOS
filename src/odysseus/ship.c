@@ -102,6 +102,10 @@ void freeShip(Ship *pstShip) {
  *       In: pstCommand = the command
  * @Ret: - */
 void executeCommand(Ship *pstShip, Command *pstCommand) {
+    if (SHIP_WAITING == pstShip->nState && CMD_STATUS != pstCommand->nType && CMD_MAP != pstCommand->nType) {
+        printString("Waiting offshore: only STATUS and MAP can be used.\n");
+        return;
+    }
     switch (pstCommand->nType) {
         case CMD_CONNECT_ITHACA:
             connectIthaca(pstShip);
@@ -136,6 +140,30 @@ void executeCommand(Ship *pstShip, Command *pstCommand) {
         default:
             // Implemented by the next steps of the phase
             printString("Command OK\n");
+            break;
+    }
+}
+
+/* @Name: runLine
+ * @Def: Parses a line typed in the terminal and runs it.
+ * @Arg: In/Out: pstShip = the ship
+ *       In/Out: psLine = the line (parseCommand modifies it)
+ * @Ret: - */
+void runLine(Ship *pstShip, char *psLine) {
+    Command stCommand;
+
+    switch (parseCommand(psLine, &stCommand)) {
+        case PARSE_OK:
+            executeCommand(pstShip, &stCommand);
+            saveOdysseusState(pstShip->pstConfig, pstShip->nGold);
+            break;
+        case PARSE_BAD_SYNTAX:
+            printString(stCommand.psUsage);
+            break;
+        case PARSE_UNKNOWN:
+            printString("Unknown command\n");
+            break;
+        default:
             break;
     }
 }

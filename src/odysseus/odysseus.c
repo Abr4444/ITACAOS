@@ -9,8 +9,6 @@
 #include "sailing.h"
 #include <signal.h>
 
-#define PROMPT "$ "
-
 int gnStop = 0;
 
 /************************************************
@@ -37,26 +35,12 @@ void handleInterrupt(int nSignal) {
  * @Ret: -
  ************************************************/
 static void runTerminal(Ship *pstShip) {
-
-    Command stCommand;
     char *psLine = NULL;
 
     printString(PROMPT);
     psLine = readLine(STDIN_FILENO);
     while (0 == gnStop && NULL != psLine) {
-        switch (parseCommand(psLine, &stCommand)) {
-            case PARSE_OK:
-                executeCommand(pstShip, &stCommand);
-                break;
-            case PARSE_BAD_SYNTAX:
-                printString(stCommand.psUsage);
-                break;
-            case PARSE_UNKNOWN:
-                printString("Unknown command\n");
-                break;
-            default:
-                break;
-        }
+        runLine(pstShip, psLine);
         free(psLine);
         psLine = NULL;
         //ships lost at sea end the program without asking for more commands
@@ -80,6 +64,11 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     if (-1 == loadOdysseusConfig(argv[1], &stConfig)) {
+        return 1;
+    }
+    if (-1 == loadOdysseusState(&stConfig)) {
+        printError("Error: could not recover the saved state.\n");
+        freeOdysseusConfig(&stConfig);
         return 1;
     }
     if (SIG_ERR == signal(SIGINT, handleInterrupt) || SIG_ERR == signal(SIGPIPE, SIG_IGN)) {

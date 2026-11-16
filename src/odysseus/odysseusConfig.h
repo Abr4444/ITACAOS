@@ -7,8 +7,10 @@
  *           (odysseus.dat).
  * @Date: 28/09/2026
  ************************************************/
-
+#include <sys/stat.h>
 #include "io.h"
+
+#define STATE_FILE "state.dat"
 
 typedef struct {
     char *psName;
@@ -29,6 +31,9 @@ typedef struct {
 } OdysseusConfig;
 
 int loadOdysseusConfig(char *psPath, OdysseusConfig *pstConfig);
+int loadOdysseusState(OdysseusConfig *pstConfig);
+void saveOdysseusState(OdysseusConfig *pstConfig, int nGold);
 void freeOdysseusConfig(OdysseusConfig *pstConfig);
+
 
 #endif

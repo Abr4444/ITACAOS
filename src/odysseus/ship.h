@@ -14,12 +14,14 @@
 #include "map.h"
 
 #define ITHACA_NAME "Ithaca"
+#define PROMPT "$ "
 
 #define SHIP_AT_ITHACA 0 // in Ithaca's harbor, not connected
 #define SHIP_CONNECTED_ITHACA 1
 #define SHIP_DOCKED 2 // docked at psLocation, connected to it
 #define SHIP_AT_SEA 3 // left psLocation but could not dock anywhere
 #define SHIP_LOST 4 // ran out of provisions: the process ends
+#define SHIP_WAITING 5 //offshore, waiting for berth: only STATUS and MAP work
 
 typedef struct {
     OdysseusConfig *pstConfig;  
@@ -38,6 +40,7 @@ typedef struct {
 
 void initShip(Ship *pstShip, OdysseusConfig *pstConfig);
 void executeCommand(Ship *pstShip, Command *pstCommand);
+void runLine(Ship *pstShip, char *psLine);
 void closeConnection(Ship *pstShip);
 void freeShip(Ship *pstShip);
 

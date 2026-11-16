@@ -56,68 +56,120 @@ static int eatRation(OdysseusConfig *pstConfig) {
     return nLeft;
 }
 /************************************************
+ * @Name: eatWhileWaiting
+ * @Def: RATION_SECONDS passed offshore: the crew eats a ration. With no
+ *       provisions left the ship is lost at sea.
+ * @Arg: In/Out: pstShip = the ship
+ * @Ret: WAIT_GOING_ON, or WAIT_FAILED if the ship is lost.
+ ************************************************/
+static int eatWhileWaiting(Ship* pstShip) {
+    char *psMessage = NULL;
+    int nLeft = eatRation(pstShip->pstConfig);
+
+    if (0 == nLeft) {
+        if (-1 != asprintf(&psMessage, "\nThe crew has run out of provisions.\nOdysseus %s has been lost at sea.\n",
+            pstShip->pstConfig->psName)) {
+            printString(psMessage);
+            free(psMessage);
+        }
+        pstShip->nState = SHIP_LOST;
+        return WAIT_FAILED;
+    }
+    if (-1 != asprintf(&psMessage, "\n>>> The crew consumes another ration.\nProvisions remaining: %d kg\n%s", nLeft, PROMPT)) {
+        printString(psMessage);
+        free(psMessage);
+    }
+    return WAIT_GOING_ON;
+}
+/************************************************
+ * @Name: checkDocked
+ * @Def: The island wrote while the ship waits: DOCKED lets it in.
+ * @Arg: In/Out: pstShip = the ship
+ *       In: pstIsland = the island it waits for
+ * @Ret: WAIT_DOCKED, WAIT_FAILED if the connection broke, or
+ *       WAIT_GOING_ON for any other frame.
+ ************************************************/
+static int checkDocked(Ship *pstShip, KnownIsland *pstIsland) {
+    Frame stFrame;
+    char *psMessage = NULL;
+
+    if (-1 == receiveFrame(pstShip->nFd, &stFrame)) {
+        if (-1 != asprintf(&psMessage, "\nError: lost the connection with %s.\n", pstIsland->psName)) {
+            printString(psMessage);
+            free(psMessage);
+        }
+        return WAIT_FAILED;
+    }
+    if (TYPE_ARRIVAL != stFrame.nType || FLAGS_OK != stFrame.nFlags || 0 != strcmp(stFrame.sData, "DOCKED"))
+        return WAIT_GOING_ON;
+    if (-1 != asprintf(&psMessage, "\n>>> %s has granted access to the port.\n", pstIsland->psName)) {
+        printString(psMessage);
+        free(psMessage);
+    }
+    return WAIT_DOCKED;
+}
+/************************************************
+ * @Name: answerTerminal
+ * @Def: The user typed a line while the ship waits: runs it (in
+ *       SHIP_WAITING only STATUS and MAP are allowed).
+ * @Arg: In/Out: pstShip = the ship
+ * @Ret: WAIT_GOING_ON, or WAIT_FAILED if stdin is closed (CTRL+C or
+ *       end of input).
+ ************************************************/
+static int answerTerminal(Ship *pstShip) {
+    char *psLine = readLine(STDIN_FILENO);
+
+    if (NULL == psLine)
+        return WAIT_FAILED;
+    runLine(pstShip, psLine);
+    free(psLine);
+    printString(PROMPT);
+    return WAIT_GOING_ON;
+}
+/************************************************
  * @Name: waitForBerth
  * @Def: The port is full: waits offshore until the island sends DOCKED.
- *       select() sleeps until the island writes or RATION_SECONDS pass,
- *       so the wait uses no CPU. Every timeout costs a ration, and with
- *       no provisions left the ship is lost at sea.
+ *       select() sleeps until the island or the user writes, or until
+ *       RATION_SECONDS pass, so the wait uses no CPU and the terminal
+ *       keeps answering. Every full RATION_SECONDS cost a ration.
  * @Arg: In/Out: pstShip = the ship, connected to the island
  *       In: pstIsland = the island it waits for
  * @Ret: 1 if the ship docked, 0 otherwise (the connection is closed).
  ************************************************/
 static int waitForBerth(Ship *pstShip, KnownIsland *pstIsland) {
-
     fd_set stReadSet;
     struct timeval stTimeout;
-    Frame stFrame;
-    char *psMessage = NULL;
-    int nReady = 0;
-    int nLeft = 0;
-    int nDocked = -1;
+    int nResult = WAIT_GOING_ON;
 
-    while (-1 == nDocked) {
-        // select() changes both, so they are set again before every call
+    pstShip->nState = SHIP_WAITING;
+    stTimeout.tv_sec = RATION_SECONDS;
+    stTimeout.tv_usec = 0;
+    printString(PROMPT);
+    while (WAIT_GOING_ON == nResult) {
+        // select() empties the set, so it is refilled every call
         FD_ZERO(&stReadSet);
+        FD_SET(STDIN_FILENO, &stReadSet);
         FD_SET(pstShip->nFd, &stReadSet);
-        stTimeout.tv_sec = RATION_SECONDS;
-        stTimeout.tv_usec = 0;
 
-        nReady = select(pstShip->nFd + 1, &stReadSet, NULL, NULL, &stTimeout);
-        if (-1 == nReady) {
-            // CTRL+C interrupts select(): the program is closing
-            nDocked = 0;
-        } else if (0 == nReady) {
-            nLeft = eatRation(pstShip->pstConfig);
-            if (0 == nLeft) {
-                if (-1 != asprintf(&psMessage, "\nThe crew has run out of provisions.\nOdysseus %s has been lost at sea.\n",
-                    pstShip->pstConfig->psName)) {
-                    printString(psMessage);
-                    free(psMessage);
-                }
-                pstShip->nState = SHIP_LOST;
-                nDocked = 0;
-            } else if (-1 != asprintf(&psMessage, "\n>>> The crew consumes another ration.\nProvisions remaining: %d kg\n", nLeft)) {
-                printString(psMessage);
-                free(psMessage);
-            }
-        } else if (-1 == receiveFrame(pstShip->nFd, &stFrame)) {
-            if (-1 != asprintf(&psMessage, "Error: lost the connection with %s.\n", pstIsland->psName)) {
-                printString(psMessage);
-                free(psMessage);
-            }
-            nDocked = 0;
-        } else if (TYPE_ARRIVAL == stFrame.nType && FLAGS_OK == stFrame.nFlags && 0 == strcmp(stFrame.sData, "DOCKED")) {
-            if (-1 != asprintf(&psMessage, "\n>>> %s has granted access to the port.\n", pstIsland->psName)) {
-                printString(psMessage);
-                free(psMessage);
-            }
-            nDocked = 1;
+        if (-1 == select(pstShip->nFd + 1, &stReadSet, NULL, NULL, &stTimeout))
+            nResult = WAIT_FAILED;
+        else if (FD_ISSET(pstShip->nFd, &stReadSet))
+            nResult = checkDocked(pstShip, pstIsland);
+        else if (FD_ISSET(STDIN_FILENO, &stReadSet))
+            nResult = answerTerminal(pstShip);
+        else {
+            nResult = eatWhileWaiting(pstShip);
+            stTimeout.tv_sec = RATION_SECONDS;
+            stTimeout.tv_usec = 0;
         }
     }
 
-    if (0 == nDocked)
+    if (WAIT_FAILED == nResult) {
         closeConnection(pstShip);
-    return nDocked;
+        if (SHIP_LOST != pstShip->nState)
+            pstShip->nState = SHIP_AT_SEA;
+    }
+    return WAIT_DOCKED == nResult;
 }
 /************************************************
  * @Name: arriveAt

@@ -15,19 +15,19 @@ SRC = src
 OBJ = obj
 
 GROUP = G18
-PHASE = F2
+PHASE = F3
 
 # Headers that many modules include
-COMMON_H = $(SRC)/common/frame.h $(SRC)/common/socket.h $(SRC)/common/io.h
+COMMON_H = $(SRC)/common/frame.h $(SRC)/common/socket.h $(SRC)/common/io.h $(SRC)/common/transfer.h
 ITHACA_H = $(SRC)/ithaca/ithacaServer.h $(SRC)/ithaca/ithacaConfig.h $(SRC)/common/server.h $(COMMON_H)
 ISLAND_H = $(SRC)/island/islandServer.h $(SRC)/island/islandConfig.h $(SRC)/common/server.h $(COMMON_H) lib/sphragis.h
 SHIP_H = $(SRC)/odysseus/ship.h $(SRC)/odysseus/map.h $(SRC)/odysseus/odysseusConfig.h $(SRC)/odysseus/terminal.h $(COMMON_H)
 
 # Object files of each executable
-ITHACA_OBJ = $(OBJ)/ithaca.o $(OBJ)/ithacaServer.o $(OBJ)/ithacaConfig.o $(OBJ)/server.o $(OBJ)/frame.o $(OBJ)/socket.o $(OBJ)/io.o
-ISLAND_OBJ = $(OBJ)/island.o $(OBJ)/islandServer.o $(OBJ)/islandConfig.o $(OBJ)/server.o $(OBJ)/frame.o $(OBJ)/socket.o $(OBJ)/io.o lib/sphragis.o
+ITHACA_OBJ = $(OBJ)/ithaca.o $(OBJ)/ithacaServer.o $(OBJ)/ithacaConfig.o $(OBJ)/server.o $(OBJ)/frame.o $(OBJ)/transfer.o $(OBJ)/socket.o $(OBJ)/io.o
+ISLAND_OBJ = $(OBJ)/island.o $(OBJ)/islandServer.o $(OBJ)/islandConfig.o $(OBJ)/server.o $(OBJ)/frame.o $(OBJ)/transfer.o $(OBJ)/socket.o $(OBJ)/io.o lib/sphragis.o
 ODYSSEUS_OBJ = $(OBJ)/odysseus.o $(OBJ)/ship.o $(OBJ)/map.o $(OBJ)/voyages.o $(OBJ)/sailing.o $(OBJ)/market.o \
-               $(OBJ)/odysseusConfig.o $(OBJ)/terminal.o $(OBJ)/frame.o $(OBJ)/socket.o $(OBJ)/io.o lib/sphragis.o
+               $(OBJ)/odysseusConfig.o $(OBJ)/terminal.o $(OBJ)/frame.o $(OBJ)/transfer.o $(OBJ)/socket.o $(OBJ)/io.o lib/sphragis.o
 
 .PHONY: all clean tar
 
@@ -65,6 +65,10 @@ $(OBJ)/server.o: $(SRC)/common/server.c $(SRC)/common/server.h $(SRC)/common/soc
 $(OBJ)/frame.o: $(SRC)/common/frame.c $(SRC)/common/frame.h
 	mkdir -p $(OBJ)
 	$(CC) $(CFLAGS) -c $(SRC)/common/frame.c -o $(OBJ)/frame.o
+
+$(OBJ)/transfer.o: $(SRC)/common/transfer.c $(SRC)/common/transfer.h $(SRC)/common/frame.h $(SRC)/common/io.h
+	mkdir -p $(OBJ)
+	$(CC) $(CFLAGS) -c $(SRC)/common/transfer.c -o $(OBJ)/transfer.o
 
 #################################################
 # Ithaca

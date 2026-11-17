@@ -6,20 +6,18 @@
 
 #include "frame.h"
 
-/* @Name: sendFrame
- * @Def: Serializes a frame and sends it with one write of 256 bytes.
+/* @Name: sendBinaryFrame
+ * @Def: Serializes a frame whose DATA may contain any byte (also '\0')
+ *       and sends it with one write of 256 bytes.
  * @Arg: In: nFd = socket
  *       In: nType, nFlags = header of the frame
- *       In: psData = text of the frame, or NULL
+ *       In: pData = bytes of the frame, or NULL if nLength is 0
+ *       In: nLength = number of valid bytes in pData
  * @Ret: 0 on success, -1 on error */
-int sendFrame(int nFd, int nType, int nFlags, char* psData){
+int sendBinaryFrame(int nFd, int nType, int nFlags, char* pData, int nLength){
     unsigned char aucFrame[FRAME_SIZE];
-    int nLength = 0;
 
-    if(NULL != psData)
-        nLength = strlen(psData);
-
-    if(FRAME_DATA_SIZE < nLength)
+    if(0 > nLength || FRAME_DATA_SIZE < nLength)
         return -1;
 
     memset(aucFrame, 0, FRAME_SIZE);
@@ -28,12 +26,27 @@ int sendFrame(int nFd, int nType, int nFlags, char* psData){
     aucFrame[2] = (unsigned char) nLength;
 
     if(0 < nLength)
-        memcpy(&aucFrame[FRAME_HEADER_SIZE], psData, nLength);
+        memcpy(&aucFrame[FRAME_HEADER_SIZE], pData, nLength);
 
     if(FRAME_SIZE != write(nFd, aucFrame, FRAME_SIZE))
         return -1;
 
     return 0;
+}
+
+/* @Name: sendFrame
+ * @Def: Sends a frame whose data is text
+ * @Arg: In: nFd = socket
+ *       In: nType, nFlags = header of the frame
+ *       In: psData = text of the frame, or NULL
+ * @Ret: 0 on success, -1 on error */
+int sendFrame(int nFd, int nType, int nFlags, char* psData){
+    int nLength = 0;
+
+    if(NULL != psData)
+        nLength = strlen(psData);
+
+    return sendBinaryFrame(nFd, nType, nFlags, psData, nLength);
 }
 
 /* @Name: receiveFrame
@@ -71,6 +84,7 @@ int isKnownType(int nType) {
 
     return (TYPE_CONNECT_ITHACA <= nType && TYPE_DISCONNECT_ITHACA >= nType) ||
            (TYPE_ARRIVAL <= nType && TYPE_DEPARTURE >= nType) ||
+           (TYPE_FILE_HEADER <= nType && TYPE_FILE_ACK >= nType) ||
            TYPE_NACK == nType;
 }
 
@@ -110,7 +124,8 @@ int sendNack(int nFd, char *psReason){
 /************************************************
  * @Name: splitFields
  * @Def: Splits the DATA of a frame on '&'. The data is modified: each
- *       field ends with '\0' and apsFields points into it.
+ *       field ends with '\0' and apsFields points into it. No strtok,
+ *       so several threads can split frames at the same time.
  * @Arg: In/Out: psData = DATA of the frame
  *       Out: apsFields = the fields found
  *       In: nMax = number of fields expected
@@ -118,14 +133,19 @@ int sendNack(int nFd, char *psReason){
  ************************************************/
 int splitFields(char *psData, char *apsFields[], int nMax) {
 
-    char *psField = NULL;
     int nCount = 0;
+    int i = 0;
 
-    psField = strtok(psData, "&");
-    while (NULL != psField && nCount < nMax) {
-        apsFields[nCount] = psField;
-        nCount++;
-        psField = strtok(NULL, "&");
+    if ('\0' == psData[0] || 0 >= nMax)
+        return 0;
+    apsFields[nCount] = psData;
+    nCount++;
+    for (i = 0; '\0' != psData[i] && nCount < nMax; i++) {
+        if ('&' == psData[i]) {
+            psData[i] = '\0';
+            apsFields[nCount] = &psData[i + 1];
+            nCount++;
+        }
     }
     return nCount;
 }

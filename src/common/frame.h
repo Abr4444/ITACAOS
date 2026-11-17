@@ -32,6 +32,12 @@
 #define TYPE_DELIVER 0x15
 #define TYPE_DEPARTURE 0x16
 
+#define TYPE_FILE_HEADER 0x20
+#define TYPE_FILE_DATA 0x21
+#define TYPE_FILE_READY 0x22
+#define TYPE_FILE_ACK 0x23
+
+
 //any process; for frames with invalid format
 #define TYPE_NACK 0x7F
 
@@ -59,6 +65,7 @@ typedef struct{
 } Frame;
 
 int sendFrame(int nFd, int nType, int nFlags, char *psData);
+int sendBinaryFrame(int nFd, int nType, int nFlags, char* pData, int nLength);
 int receiveFrame(int nFd, Frame *pstFrame);
 char *checkFrame(Frame *pstFrame);
 int sendNack(int nFd, char *psReason);

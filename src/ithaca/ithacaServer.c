@@ -229,7 +229,7 @@ static Voyage* acceptVoyage(IthacaServer *pstIthaca, Client *pstClient, Frame *p
     }
     sendFrame(pstClient->nFd, TYPE_ACCEPT, FLAGS_OK, psAnswer);
     free(psAnswer);
-    if (-1 != asprintf(&psMessage, ">>> Voyage %d assigned to %s.\n", nId, pstClient->psName)) {
+    if (-1 != asprintf(&psMessage, "\n>>> Voyage %d assigned to %s.\n", nId, pstClient->psName)) {
         printString(psMessage);
         free(psMessage);
     }

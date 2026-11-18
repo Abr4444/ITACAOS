@@ -14,6 +14,7 @@
 #define VOYAGE_AVAILABLE 0
 #define VOYAGE_ASSIGNED 1
 #define VOYAGE_FAILED 2
+#define VOYAGE_COMPLETED 3
 
 typedef struct {
     int nId;
@@ -23,6 +24,7 @@ typedef struct {
     int nReward;
     int nState;
     char *psHolder; // name of the Odysseus it was assigned to, or NULL
+    char *psPath;
 } Voyage;
 
 typedef struct {

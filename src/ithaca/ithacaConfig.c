@@ -5,24 +5,25 @@
  * @Date: 28/09/2026
  ************************************************/
 
+#define _GNU_SOURCE
 #include "ithacaConfig.h"
 
 /************************************************
  * @Name: loadVoyages
  * @Def: Reads every "<OBJECT> <FILE> <DESTINATION> <REWARD>" line of
  *       voyages.dat and gives each voyage its line number as ID.
- * @Arg: In: psPath = path of voyages.dat
+ * @Arg: In: psVoyagesPath = path of voyages.dat
  *       Out: pstConfig = gets pstVoyages and nNumVoyages
  * @Ret: 0 on success, -1 on error.
  ************************************************/
-static int loadVoyages(char *psPath, IthacaConfig *pstConfig) {
+static int loadVoyages(char *psVoyagesPath, IthacaConfig *pstConfig) {
 
     Voyage *pstMore = NULL;
     char *psLine = NULL;
     int nFd = 0;
     int nIndex = 0;
-
-    nFd = open(psPath, O_RDONLY);
+    
+    nFd = open(psVoyagesPath, O_RDONLY);
     if (-1 == nFd) {
         printError("Error: could not open the voyages file.\n");
         return -1;
@@ -49,6 +50,8 @@ static int loadVoyages(char *psPath, IthacaConfig *pstConfig) {
         pstConfig->pstVoyages[nIndex].nState = VOYAGE_AVAILABLE;
         pstConfig->pstVoyages[nIndex].psHolder = NULL;
         pstConfig->nNumVoyages++;
+        if (-1 == asprintf(&pstConfig->pstVoyages[nIndex].psPath, "%s/%s", pstConfig->psFolder, pstConfig->pstVoyages[nIndex].psFile))
+            pstConfig->pstVoyages[nIndex].psPath = NULL;
 
         psLine = readLine(nFd);
     }
@@ -107,6 +110,7 @@ void freeIthacaConfig(IthacaConfig *pstConfig) {
     for (i = 0; i < pstConfig->nNumVoyages; i++) {
         free(pstConfig->pstVoyages[i].psObject);
         free(pstConfig->pstVoyages[i].psHolder);
+        free(pstConfig->pstVoyages[i].psPath);
     }
     free(pstConfig->pstVoyages);
 }

@@ -12,6 +12,7 @@
 #include "ithacaConfig.h"
 #include "frame.h"
 #include "server.h"
+#include "transfer.h"
 
 // How the thread of an Odysseus ends up (Client nState)
 #define CLIENT_ACTIVE 0   // identified, keeps sending requests

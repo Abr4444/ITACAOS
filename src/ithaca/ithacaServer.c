@@ -159,17 +159,30 @@ static int toVoyageId(char *psText) {
     return nId;
 }
 
+/* @Name: objectExists
+ * @Def: Checks that a voyage's image can be opened for reading.
+ * @Arg: In: psPath = path of the image, or NULL
+ * @Ret: 1 if it exists, 0 otherwise. */
+static int objectExists(char *psPath) {
+    int nFd = -1;
+
+    if (NULL != psPath)
+        nFd = open(psPath, O_RDONLY);
+    if (-1 == nFd)
+        return 0;
+    close(nFd);
+    return 1;
+}
+
 /************************************************
  * @Name: acceptVoyage
- * @Def: ACCEPT: assigns a voyage to the Odysseus if it is still
- *       available. Checking and assigning under the same lock is what
- *       guarantees that two ships never get the same voyage.
+ * @Def: assigns a voyage to the Odysseus if it is still available.
  * @Arg: In/Out: pstIthaca = the server
  *       In: pstClient = the Odysseus that accepts it
  *       In: pstFrame = the request, with the voyage ID
- * @Ret: -
+ * @Ret: The voyage assigned, or NULL if it was refused.
  ************************************************/
-static void acceptVoyage(IthacaServer *pstIthaca, Client *pstClient, Frame *pstFrame) {
+static Voyage* acceptVoyage(IthacaServer *pstIthaca, Client *pstClient, Frame *pstFrame) {
 
     IthacaConfig *pstConfig = pstIthaca->pstConfig;
     Voyage *pstVoyage = NULL;
@@ -180,7 +193,7 @@ static void acceptVoyage(IthacaServer *pstIthaca, Client *pstClient, Frame *pstF
 
     if (-1 == nId) {
         sendFrame(pstClient->nFd, TYPE_ACCEPT, FLAGS_FAIL, "INVALID_VOYAGE_ID");
-        return;
+        return NULL;
     }
     pthread_mutex_lock(&pstIthaca->stVoyagesMutex);
     for (int i = 0; i < pstConfig->nNumVoyages && NULL == psReason; i++) {
@@ -192,6 +205,8 @@ static void acceptVoyage(IthacaServer *pstIthaca, Client *pstClient, Frame *pstF
         pstVoyage = &pstConfig->pstVoyages[nId - 1];
         if (nId > pstConfig->nNumVoyages || VOYAGE_AVAILABLE != pstVoyage->nState)
             psReason = "VOYAGE_NOT_AVAILABLE";
+        else if (0 == objectExists(pstVoyage->psPath))
+            psReason = "OBJECT_NOT_FOUND";
         else {
             pstVoyage->psHolder = malloc(strlen(pstClient->psName) + 1);
             if (NULL == pstVoyage->psHolder ||
@@ -210,11 +225,42 @@ static void acceptVoyage(IthacaServer *pstIthaca, Client *pstClient, Frame *pstF
 
     if (NULL != psReason) {
         sendFrame(pstClient->nFd, TYPE_ACCEPT, FLAGS_FAIL, psReason);
-        return;
+        return NULL;
     }
     sendFrame(pstClient->nFd, TYPE_ACCEPT, FLAGS_OK, psAnswer);
     free(psAnswer);
     if (-1 != asprintf(&psMessage, ">>> Voyage %d assigned to %s.\n", nId, pstClient->psName)) {
+        printString(psMessage);
+        free(psMessage);
+    }
+    return pstVoyage;
+}
+
+/* @Name: sendObject
+ * @Def: Sends the image of a just-assigned voyage to its Odysseus
+ * @Arg: In/Out: pstIthaca = the server (for the voyages mutex)
+ *       In: pstClient = the Odysseus that accepted it
+ *       In/Out: pstVoyage = the voyage assigned to it
+ * @Ret: - */
+static void sendObject(IthacaServer *pstIthaca, Client *pstClient, Voyage *pstVoyage) {
+    char *psMessage = NULL;
+
+    if (-1 != asprintf(&psMessage, ">>> Sending %s to %s...\n", pstVoyage->psObject, pstClient->psName)) {
+        printString(psMessage);
+        free(psMessage);
+    }
+    if (0 == sendFile(pstClient->nFd, "OBJECT", pstVoyage->psPath, fileNameOf(pstVoyage->psPath), FLAGS_OK)) {
+        printString("\n>>> Object transferred successfully.\n");
+        return;
+    }
+
+    // the ship didn't get the image
+    pthread_mutex_lock(&pstIthaca->stVoyagesMutex);
+    pstVoyage->nState = VOYAGE_AVAILABLE;
+    free(pstVoyage->psHolder);
+    pstVoyage->psHolder = NULL;
+    pthread_mutex_unlock(&pstIthaca->stVoyagesMutex);
+    if (-1 != asprintf(&psMessage, "\n>>> Could not send %s to %s. Voyage %d is available again.\n", pstVoyage->psObject, pstClient->psName, pstVoyage->nId)) {
         printString(psMessage);
         free(psMessage);
     }
@@ -230,6 +276,7 @@ static void acceptVoyage(IthacaServer *pstIthaca, Client *pstClient, Frame *pstF
 static int handleRequest(IthacaServer *pstIthaca, Client *pstClient, Frame *pstFrame) {
 
     char *psReason = NULL;
+    Voyage *pstVoyage = NULL;
 
     psReason = checkFrame(pstFrame);
     if (NULL != psReason) {
@@ -249,7 +296,9 @@ static int handleRequest(IthacaServer *pstIthaca, Client *pstClient, Frame *pstF
             listVoyages(pstIthaca, pstClient);
             break;
         case TYPE_ACCEPT:
-            acceptVoyage(pstIthaca, pstClient, pstFrame);
+            pstVoyage = acceptVoyage(pstIthaca, pstClient, pstFrame);
+            if (NULL != pstVoyage)
+                sendObject(pstIthaca, pstClient, pstVoyage);
             break;
         case TYPE_CLAIM:
             // Filled in by the next steps of the phase
@@ -358,3 +407,4 @@ void closeIthacaServer(IthacaServer *pstIthaca) {
     closeClientList(&pstIthaca->stClients);
     pthread_mutex_destroy(&pstIthaca->stVoyagesMutex);
 }
+

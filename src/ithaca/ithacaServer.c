@@ -31,6 +31,24 @@ static int isNameInUse(ClientList *pstList, char *psName) {
     return 0;
 }
 
+/* @Name: findHeldVoyage
+ * @Def: Finds the voyage assigned to a ship. Call it with stVoyagesMutex locked.
+ * @Arg: In: pstIthaca = the server
+ *       In: psName = name of the ship
+ * @Ret: The voyage that ship holds, or NULL if it holds none. */
+static Voyage *findHeldVoyage(IthacaServer *pstIthaca, char *psName) {
+
+    IthacaConfig *pstConfig = pstIthaca->pstConfig;
+    int i = 0;
+
+    for (i = 0; i < pstConfig->nNumVoyages; i++) {
+        if (VOYAGE_ASSIGNED == pstConfig->pstVoyages[i].nState &&
+            0 == strcmp(pstConfig->pstVoyages[i].psHolder, psName))
+            return &pstConfig->pstVoyages[i];
+    }
+    return NULL;
+}
+
 /************************************************
  * @Name: identifyClient
  * @Def: Handles the CONNECT ITHACA frame that Odysseus sends right after
@@ -44,6 +62,7 @@ static int isNameInUse(ClientList *pstList, char *psName) {
 static int identifyClient(IthacaServer *pstIthaca, Client *pstClient) {
 
     ClientList *pstList = &pstIthaca->stClients;
+    Voyage *pstVoyage = NULL;
     Frame stFrame;
     char *psReason = NULL;
 
@@ -85,7 +104,14 @@ static int identifyClient(IthacaServer *pstIthaca, Client *pstClient) {
     }
     printString("\n");
     sendFrame(pstClient->nFd, TYPE_CONNECT_ITHACA, FLAGS_OK, "OK");
-    printClientEvent(pstClient->psName, "connected to Ithaca.");
+    // a ship that still holds a voyage is coming back to claim it
+    pthread_mutex_lock(&pstIthaca->stVoyagesMutex);
+    pstVoyage = findHeldVoyage(pstIthaca, pstClient->psName);
+    pthread_mutex_unlock(&pstIthaca->stVoyagesMutex);
+    if (NULL == pstVoyage)
+        printClientEvent(pstClient->psName, "connected to Ithaca.");
+    else
+        printClientEvent(pstClient->psName, "returned to Ithaca.");
     return CLIENT_ACTIVE;
 }
 

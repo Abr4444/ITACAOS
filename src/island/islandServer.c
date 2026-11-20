@@ -312,16 +312,110 @@ static void handleRequest(Client *pstShip, Frame *pstFrame) {
     } else if (TYPE_BUY_MAP == nType) {
         handleMap(pstShip, pstFrame);
     } else if (TYPE_DEPARTURE == nType) {
-        if (-1 != asprintf(&psLog, ">>> %s has left.\n", pstShip->psName)) {
+        if (-1 != asprintf(&psLog, "\n>>> %s has left %s.\n", pstShip->psName, islandOf(pstShip)->pstConfig->psName)) {
             printString(psLog);
             free(psLog);
         }
         freeBerth(pstShip);
         sendFrame(pstShip->nFd, TYPE_DEPARTURE, FLAGS_OK, "OK");
     } else {
-        // DELIVER is Phase 3
         sendFrame(pstShip->nFd, nType, FLAGS_FAIL, "NOT_AVAILABLE");
     }
+}
+
+/* @Name: stampObject
+ * @Def: Signs a delivered image with the island's glyph into
+ *       <folder>/signed_<name> and sends it back to the ship as SIGNED,
+ * @Arg: In: pstShip = the ship that delivered it
+ *       In: psReceived = path of the delivered image
+ * @Ret: NULL on success, or "STAMP_FAILED" / "SIGNED_FAILED". */
+static char *stampObject(Client *pstShip, char *psReceived) {
+    IslandServer *pstIsland = islandOf(pstShip);
+    IslandConfig *pstConfig = pstIsland->pstConfig;
+    char *psSigned = NULL;
+    char *psMessage = NULL;
+    char *psReason = NULL;
+    int nResult = 0;
+
+    if (-1 == asprintf(&psSigned, "%s/signed_%s", pstConfig->psFolder, fileNameOf(psReceived)))
+        return "STAMP_FAILED";
+    if (-1 != asprintf(&psMessage, "\n>>> Stamping object with the glyph of %s...\n", pstConfig->psName)) {
+        printString(psMessage);
+        free(psMessage);
+    }
+
+    pthread_mutex_lock(&pstIsland->stShips.stMutex);
+    nResult = SPHRAGIS_sign_with_glyph(pstConfig->psName, psReceived, psSigned);
+    pthread_mutex_unlock(&pstIsland->stShips.stMutex);
+
+    if (SPHRAGIS_OK != nResult) {
+        psReason = "STAMP_FAILED";
+    } else {
+        printString(">>> Object stamped successfully.\n");
+        if (-1 != asprintf(&psMessage, "\n>>> Sending stamped object to %s...\n", pstShip->psName)) {
+            printString(psMessage);
+            free(psMessage);
+        }
+        if (0 == sendFile(pstShip->nFd, "SIGNED", psSigned, fileNameOf(psReceived), FLAGS_OK))
+            printString(">>> Transfer completed.\n");
+        else
+            psReason = "SIGNED_FAILED";
+    }
+    unlink(psSigned);
+    free(psSigned);
+    return psReason;
+}
+
+/* @Name: handleDeliver
+ * @Def: DELIVER "<VoyageID>&<Object>": receives the image, stamps it and
+ *       sends it back. Runs outside the ships mutex, so other ships keep
+ * @Arg: In/Out: pstShip = the ship that delivers
+ *       In: pstFrame = the request
+ * @Ret: - */
+static void handleDeliver(Client *pstShip, Frame *pstFrame) {
+    IslandServer *pstIsland = islandOf(pstShip);
+    char *apsFields[DELIVER_FIELDS];
+    char *psReason = NULL;
+    char *psPath = NULL;
+    char *psMessage = NULL;
+    Frame stHeader;
+    int nState = 0;
+
+    pthread_mutex_lock(&pstIsland->stShips.stMutex);
+    nState = pstShip->nState;
+    pthread_mutex_unlock(&pstIsland->stShips.stMutex);
+    if (SHIP_DOCKED != nState)
+        psReason = "NOT_DOCKED";
+    else if (DELIVER_FIELDS != splitFields(pstFrame->sData, apsFields, DELIVER_FIELDS))
+        psReason = NACK_INVALID_DATA;
+
+    // file header always comes after DELIVER frame
+    if (-1 == receiveFrame(pstShip->nFd, &stHeader))
+        return;
+    if (NULL != psReason) {
+        sendFrame(pstShip->nFd, TYPE_FILE_READY, FLAGS_FAIL, psReason);
+        sendFrame(pstShip->nFd, TYPE_DELIVER, FLAGS_FAIL, psReason);
+        return;
+    }
+
+    if (-1 != asprintf(&psMessage, "\n>>> %s requests delivery of voyage %s.\n>>> Receiving %s...\n", pstShip->psName, apsFields[0], apsFields[1])) {
+        printString(psMessage);
+        free(psMessage);
+    }
+    psPath = receiveFile(pstShip->nFd, &stHeader, "DELIVERY", pstIsland->pstConfig->psFolder);
+    if (NULL == psPath) {
+        sendFrame(pstShip->nFd, TYPE_DELIVER, FLAGS_FAIL, "DELIVERY_FAILED");
+        return;
+    }
+    printString("\n>>> Object received correctly.\n");
+
+    psReason = stampObject(pstShip, psPath);
+    unlink(psPath);
+    free(psPath);
+    if (NULL == psReason)
+        sendFrame(pstShip->nFd, TYPE_DELIVER, FLAGS_OK, "OK");
+    else
+        sendFrame(pstShip->nFd, TYPE_DELIVER, FLAGS_FAIL, psReason);
 }
 
 /* @Name: serveShip
@@ -329,16 +423,19 @@ static void handleRequest(Client *pstShip, Frame *pstFrame) {
  * @Arg: In: pArg = the Client to serve
  * @Ret: NULL. */
 static void *serveShip(void *pArg) {
-
     Client *pstShip = (Client *) pArg;
     ClientList *pstShips = &islandOf(pstShip)->stShips;
     Frame stFrame;
     char *psLog = NULL;
 
     while (0 == receiveFrame(pstShip->nFd, &stFrame)) {
-        pthread_mutex_lock(&pstShips->stMutex);
-        handleRequest(pstShip, &stFrame);
-        pthread_mutex_unlock(&pstShips->stMutex);
+        if (NULL == checkFrame(&stFrame) && TYPE_DELIVER == stFrame.nType && FLAGS_REQUEST == stFrame.nFlags) {
+            handleDeliver(pstShip, &stFrame);
+        } else {
+            pthread_mutex_lock(&pstShips->stMutex);
+            handleRequest(pstShip, &stFrame);
+            pthread_mutex_unlock(&pstShips->stMutex);
+        }
     }
 
     pthread_mutex_lock(&pstShips->stMutex);
@@ -361,7 +458,6 @@ static void *serveShip(void *pArg) {
  *       In: pstConfig = the loaded island configuration and stock
  * @Ret: 0 on success, -1 on error. */
 int initIslandServer(IslandServer *pstIsland, IslandConfig *pstConfig) {
-
     pstIsland->pstConfig = pstConfig;
     pstIsland->nDocked = 0;
     pstIsland->nNextTicket = 0;
@@ -384,7 +480,6 @@ int initIslandServer(IslandServer *pstIsland, IslandConfig *pstConfig) {
  *       In: nListenFd = listening socket
  * @Ret: - */
 void runIslandServer(IslandServer *pstIsland, int nListenFd) {
-
     int nFd = acceptClient(nListenFd);
 
     while (-1 != nFd) {

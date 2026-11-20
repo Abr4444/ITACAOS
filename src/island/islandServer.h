@@ -12,11 +12,14 @@
 #include "islandConfig.h"
 #include "frame.h"
 #include "server.h"
+#include "transfer.h"
 
 // Where a ship is (Client nState)
 #define SHIP_OUTSIDE 0   // connected, not arrived yet (or already departed)
 #define SHIP_QUEUED 1    // waiting offshore in the FIFO queue
 #define SHIP_DOCKED 2    // inside the port, owns a berth
+
+#define DELIVER_FIELDS 2 // <VoyageID>&<Object>
 
 
 typedef struct {

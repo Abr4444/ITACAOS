@@ -292,6 +292,90 @@ static void sendObject(IthacaServer *pstIthaca, Client *pstClient, Voyage *pstVo
     }
 }
 
+/* @Name: checkClaim
+ * @Def: Receives the stamped image of a CLAIM and checks that it is the
+ *       voyage's object with the glyph of its destination. The image is deleted afterwards.
+ * @Arg: In: pstClient = the Odysseus that claims
+ *       In: pstVoyage = the voyage it holds
+ *       In: psFolder = Ithaca's folder, where the image is received
+ * @Ret: NULL if the image is valid, or the reason of the error. */
+static char *checkClaim(Client *pstClient, Voyage *pstVoyage, char *psFolder) {
+    Frame stHeader;
+    char *psPath = NULL;
+    char *psReason = NULL;
+    char *psMessage = NULL;
+
+    if (-1 != asprintf(&psMessage, "\n>>> Receiving stamped %s...\n", pstVoyage->psObject)) {
+        printString(psMessage);
+        free(psMessage);
+    }
+    if (0 == receiveFrame(pstClient->nFd, &stHeader))
+        psPath = receiveFile(pstClient->nFd, &stHeader, "CLAIM", psFolder);
+    if (NULL == psPath)
+        return "TRANSFER_FAILED";
+    printString(">>> Object received correctly.\n");
+
+    if (0 != strcmp(fileNameOf(psPath), fileNameOf(pstVoyage->psFile)))
+        psReason = "WRONG_OBJECT";
+    else if (1 != SPHRAGIS_has_glyph(pstVoyage->psDestination, psPath))
+        psReason = "GLYPH_NOT_FOUND";
+
+    unlink(psPath);
+    free(psPath);
+    return psReason;
+}
+
+/* @Name: claimVoyage
+ * @Def: CLAIM: checks that the ship holds the voyage, receives and checks
+ *       the stamped image, then completes the voyage and grants the reward.
+ * @Arg: In/Out: pstIthaca = the server
+ *       In: pstClient = the Odysseus that claims
+ *       In: pstFrame = the request, with the voyage ID
+ * @Ret: - */
+static void claimVoyage(IthacaServer *pstIthaca, Client *pstClient, Frame *pstFrame) {
+    Voyage *pstVoyage = NULL;
+    Frame stHeader;
+    char *psReason = NULL;
+    char *psAnswer = NULL;
+    char *psMessage = NULL;
+    int nId = toVoyageId(pstFrame->sData);
+
+    pthread_mutex_lock(&pstIthaca->stVoyagesMutex);
+    pstVoyage = findHeldVoyage(pstIthaca, pstClient->psName);
+    pthread_mutex_unlock(&pstIthaca->stVoyagesMutex);
+    if (-1 != asprintf(&psMessage, ">>> %s claims voyage %s.\n", pstClient->psName, pstFrame->sData)) {
+        printString(psMessage);
+        free(psMessage);
+    }
+
+    // the ship doesn't hold that voyage: refuse it
+    if (NULL == pstVoyage || nId != pstVoyage->nId) {
+        if (0 == receiveFrame(pstClient->nFd, &stHeader))
+            sendFrame(pstClient->nFd, TYPE_FILE_READY, FLAGS_FAIL, "VOYAGE_NOT_ASSIGNED");
+        sendFrame(pstClient->nFd, TYPE_CLAIM, FLAGS_FAIL, "VOYAGE_NOT_ASSIGNED");
+        return;
+    }
+
+    psReason = checkClaim(pstClient, pstVoyage, pstIthaca->pstConfig->psFolder);
+    if (NULL == psReason && -1 == asprintf(&psAnswer, "OK&%d", pstVoyage->nReward))
+        psReason = "OUT_OF_MEMORY";
+    if (NULL != psReason) {
+        sendFrame(pstClient->nFd, TYPE_CLAIM, FLAGS_FAIL, psReason);
+        return;
+    }
+
+    pthread_mutex_lock(&pstIthaca->stVoyagesMutex);
+    pstVoyage->nState = VOYAGE_COMPLETED;
+    pthread_mutex_unlock(&pstIthaca->stVoyagesMutex);
+    if (-1 != asprintf(&psMessage, "\n>>> Glyph of %s verified.\n>>> Voyage %d completed by %s.\n>>> Reward granted: %d gold.\n",
+                       pstVoyage->psDestination, pstVoyage->nId, pstClient->psName, pstVoyage->nReward)) {
+        printString(psMessage);
+        free(psMessage);
+    }
+    sendFrame(pstClient->nFd, TYPE_CLAIM, FLAGS_OK, psAnswer);
+    free(psAnswer);
+}
+
 /************************************************
  * @Name: handleRequest
  * @Def: Answers one request of an identified Odysseus.
@@ -327,8 +411,7 @@ static int handleRequest(IthacaServer *pstIthaca, Client *pstClient, Frame *pstF
                 sendObject(pstIthaca, pstClient, pstVoyage);
             break;
         case TYPE_CLAIM:
-            // Filled in by the next steps of the phase
-            sendFrame(pstClient->nFd, pstFrame->nType, FLAGS_FAIL, "NOT_IMPLEMENTED");
+            claimVoyage(pstIthaca, pstClient, pstFrame);
             break;
         case TYPE_NACK:
             // Never answer a NACK with another NACK, or two processes

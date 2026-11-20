@@ -19,12 +19,12 @@ PHASE = F3
 
 # Headers that many modules include
 COMMON_H = $(SRC)/common/frame.h $(SRC)/common/socket.h $(SRC)/common/io.h $(SRC)/common/transfer.h
-ITHACA_H = $(SRC)/ithaca/ithacaServer.h $(SRC)/ithaca/ithacaConfig.h $(SRC)/common/server.h $(COMMON_H)
+ITHACA_H = $(SRC)/ithaca/ithacaServer.h $(SRC)/ithaca/ithacaConfig.h $(SRC)/common/server.h $(COMMON_H) lib/sphragis.h
 ISLAND_H = $(SRC)/island/islandServer.h $(SRC)/island/islandConfig.h $(SRC)/common/server.h $(COMMON_H) lib/sphragis.h
 SHIP_H = $(SRC)/odysseus/ship.h $(SRC)/odysseus/map.h $(SRC)/odysseus/odysseusConfig.h $(SRC)/odysseus/terminal.h $(COMMON_H)
 
 # Object files of each executable
-ITHACA_OBJ = $(OBJ)/ithaca.o $(OBJ)/ithacaServer.o $(OBJ)/ithacaConfig.o $(OBJ)/server.o $(OBJ)/frame.o $(OBJ)/transfer.o $(OBJ)/socket.o $(OBJ)/io.o
+ITHACA_OBJ = $(OBJ)/ithaca.o $(OBJ)/ithacaServer.o $(OBJ)/ithacaConfig.o $(OBJ)/server.o $(OBJ)/frame.o $(OBJ)/transfer.o $(OBJ)/socket.o $(OBJ)/io.o lib/sphragis.o
 ISLAND_OBJ = $(OBJ)/island.o $(OBJ)/islandServer.o $(OBJ)/islandConfig.o $(OBJ)/server.o $(OBJ)/frame.o $(OBJ)/transfer.o $(OBJ)/socket.o $(OBJ)/io.o lib/sphragis.o
 ODYSSEUS_OBJ = $(OBJ)/odysseus.o $(OBJ)/ship.o $(OBJ)/map.o $(OBJ)/voyages.o $(OBJ)/sailing.o $(OBJ)/market.o \
                $(OBJ)/odysseusConfig.o $(OBJ)/terminal.o $(OBJ)/frame.o $(OBJ)/transfer.o $(OBJ)/socket.o $(OBJ)/io.o lib/sphragis.o

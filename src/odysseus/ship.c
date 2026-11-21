@@ -9,6 +9,7 @@
 #include "voyages.h"
 #include "sailing.h"
 #include "market.h"
+#include "delivery.h"
 
 /* @Name: showStatus
  * @Def: STATUS: prints gold, cargo, provisions, voyage and location.
@@ -44,8 +45,8 @@ static void showStatus(Ship *pstShip) {
             printString(psMessage);
             free(psMessage);
         }
-    } else if (-1 != asprintf(&psMessage, "\nTotal provisions: %d kg\n\nCurrent voyage: %s -> %s\nReward: %d\nCurrent location: %s\n",
-                              nTotal, pstShip->psObject, pstShip->psDestination, pstShip->nReward, pstShip->psLocation)) {
+    } else if (-1 != asprintf(&psMessage, "\nTotal provisions: %d kg\n\nCurrent voyage: %s -> %s\nReward: %d\nObject: %s\nCurrent location: %s\n",
+                              nTotal, pstShip->psObject, pstShip->psDestination, pstShip->nReward, fileNameOf(pstShip->psObjectPath), pstShip->psLocation)) {
         printString(psMessage);
         free(psMessage);
     }
@@ -79,19 +80,38 @@ void initShip(Ship *pstShip, OdysseusConfig *pstConfig) {
     pstShip->nReward = 0;
     pstShip->pnListedIds = NULL;
     pstShip->nNumListed = 0;
+    pstShip->psObjectPath = NULL;
+    pstShip->nDelivered = 0;
     initMap(&pstShip->stMap);
     // voyages begins there
     if (NULL == addIsland(&pstShip->stMap, pstConfig->psAeaeaName, pstConfig->psAeaeaIp, pstConfig->nAeaeaPort))
         printString("Error: not enough memory\n");
 }
 
+/* @Name: dropVoyage
+ * @Def: Forgets the current voyage and deletes its object from the ship's folder.
+ * @Arg: In/Out: pstShip = the ship
+ * @Ret: - */
+void dropVoyage(Ship *pstShip) {
+    if (NULL != pstShip->psObjectPath)
+        unlink(pstShip->psObjectPath);
+    free(pstShip->psObjectPath);
+    free(pstShip->psObject);
+    free(pstShip->psDestination);
+    pstShip->psObjectPath = NULL;
+    pstShip->psObject = NULL;
+    pstShip->psDestination = NULL;
+    pstShip->nVoyageId = 0;
+    pstShip->nReward = 0;
+    pstShip->nDelivered = 0;
+}
+
 /* @Name: freeShip
- * @Def: Frees the voyage, the listed voyages and the map.
+ * @Def: Frees the voyage (deleting its object), the listed voyages and the map.
  * @Arg: In/Out: pstShip = the ship
  * @Ret: - */
 void freeShip(Ship *pstShip) {
-    free(pstShip->psObject);
-    free(pstShip->psDestination);
+    dropVoyage(pstShip);
     forgetListedVoyages(pstShip);
     freeMap(&pstShip->stMap);
 }
@@ -136,6 +156,9 @@ void executeCommand(Ship *pstShip, Command *pstCommand) {
             break;
         case CMD_MAP:
             showMap(&pstShip->stMap);
+            break;
+        case CMD_DELIVER:
+            deliver(pstShip);
             break;
         default:
             // Implemented by the next steps of the phase

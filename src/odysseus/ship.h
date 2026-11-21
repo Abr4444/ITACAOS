@@ -12,6 +12,7 @@
 #include "frame.h"
 #include "socket.h"
 #include "map.h"
+#include "transfer.h"
 
 #define ITHACA_NAME "Ithaca"
 #define PROMPT "$ "
@@ -36,6 +37,8 @@ typedef struct {
     int *pnListedIds;// voyage IDs of the last LIST VOYAGES
     int nNumListed;
     Map stMap;  // the islands the ship knows, Aeaea first
+    char *psObjectPath;
+    int nDelivered;
 } Ship;
 
 void initShip(Ship *pstShip, OdysseusConfig *pstConfig);
@@ -43,5 +46,6 @@ void executeCommand(Ship *pstShip, Command *pstCommand);
 void runLine(Ship *pstShip, char *psLine);
 void closeConnection(Ship *pstShip);
 void freeShip(Ship *pstShip);
+void dropVoyage(Ship *pstShip);
 
 #endif

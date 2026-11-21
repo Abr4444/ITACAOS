@@ -13,6 +13,7 @@
 #define MARKET_FIELDS 5          //Index&Total&Product&Amount&Price
 #define TRADE_FIELDS 4           //OK&Product&Amount&Cost (or Income)
 
+void lostIsland(Ship *pstShip);
 void listMarket(Ship *pstShip);
 void buy(Ship *pstShip, char *psProduct, int nAmount);
 void sell(Ship *pstShip, char *psProduct, int nAmount);

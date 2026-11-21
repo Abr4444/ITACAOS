@@ -11,7 +11,7 @@
  * @Def: The island stopped answering: close the connection.
  * @Arg: In/Out: pstShip = the ship
  * @Ret: - */
-static void lostIsland(Ship *pstShip) {
+void lostIsland(Ship *pstShip) {
 
     char *psMessage = NULL;
 

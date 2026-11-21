@@ -187,6 +187,7 @@ static int isListedVoyage(Ship *pstShip, int nId) {
  ************************************************/
 void acceptVoyage(Ship *pstShip, int nId) {
     Frame stFrame;
+    Frame stHeader;
     char *apsFields[ACCEPT_VOYAGE_FIELDS];
     char *psMessage = NULL;
     char *psId = NULL;
@@ -221,15 +222,21 @@ void acceptVoyage(Ship *pstShip, int nId) {
         printString("Error: Ithaca sent a wrong voyage.\n");
         return;
     }
-
+    
+    if (-1 == receiveFrame(pstShip->nFd, &stHeader)) {
+        lostIthaca(pstShip);
+        return;
+    }
+    pstShip->psObjectPath = receiveFile(pstShip->nFd, &stHeader, "OBJECT", pstShip->pstConfig->psFolder);
+    if (NULL == pstShip->psObjectPath) {
+        printString("Error: the object could not be received. The voyage is cancelled.\n");
+        return;
+    }
     pstShip->psObject = copyText(apsFields[2]);
     pstShip->psDestination = copyText(apsFields[3]);
     if (NULL == pstShip->psObject || NULL == pstShip->psDestination) {
         printString("Error: not enough memory for voyage.\n");
-        free(pstShip->psObject);
-        free(pstShip->psDestination);
-        pstShip->psObject = NULL;
-        pstShip->psDestination = NULL;
+        dropVoyage(pstShip);
         return;
     }
     pstShip->nVoyageId = atoi(apsFields[1]);

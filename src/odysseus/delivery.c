@@ -8,6 +8,19 @@
 #define _GNU_SOURCE
 #include "delivery.h"
 
+/* @Name: objectOnBoard
+ * @Def: Checks that the object can be opened for reading.
+ * @Arg: In: psPath = path of the object
+ * @Ret: 1 if it is on board, 0 otherwise. */
+static int objectOnBoard(char *psPath) {
+    int nFd = open(psPath, O_RDONLY);
+
+    if (-1 == nFd)
+        return 0;
+    close(nFd);
+    return 1;
+}
+
 /************************************************
  * @Name: canDeliver
  * @Def: DELIVER needs an active voyage whose object is not delivered yet
@@ -33,7 +46,7 @@ static int canDeliver(Ship *pstShip) {
         }
         return 0;
     }
-    if (0 != access(pstShip->psObjectPath, R_OK)) {
+    if (0 == objectOnBoard(pstShip->psObjectPath)) {
         printString("Error: the object is no longer on board.\n");
         return 0;
     }
@@ -86,7 +99,7 @@ void deliver(Ship *pstShip) {
         printString(psMessage);
         free(psMessage);
     }
-    if (0 != nTransfer && 1 == gnStop) {
+    if (0 != nTransfer && 1 == *pstShip->pnStop) {
         closeConnection(pstShip);
         return;
     }
@@ -130,7 +143,7 @@ static int canClaim(Ship *pstShip) {
         printString("You have no delivered object to claim.\n");
         return 0;
     }
-    if (0 != access(pstShip->psObjectPath, R_OK)) {
+    if (0 == objectOnBoard(pstShip->psObjectPath)) {
         printString("Error: the stamped object is no longer on board.\n");
         return 0;
     }
@@ -164,7 +177,7 @@ void claim(Ship *pstShip) {
         nTransfer = sendFile(pstShip->nFd, "CLAIM", pstShip->psObjectPath, fileNameOf(pstShip->psObjectPath), FLAGS_REQUEST);
     if (0 == nTransfer)
         printString("\nObject transferred correctly.\n");
-    if (0 != nTransfer && 1 == gnStop) {
+    if (0 != nTransfer && 1 == *pstShip->pnStop) {
         closeConnection(pstShip);
         return;
     }

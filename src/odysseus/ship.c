@@ -174,8 +174,6 @@ void executeCommand(Ship *pstShip, Command *pstCommand) {
             claim(pstShip);
             break;
         default:
-            // Implemented by the next steps of the phase
-            printString("Command OK\n");
             break;
     }
 }

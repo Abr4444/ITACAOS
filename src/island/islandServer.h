@@ -20,6 +20,7 @@
 #define SHIP_DOCKED 2    // inside the port, owns a berth
 
 #define DELIVER_FIELDS 2 // <VoyageID>&<Object>
+#define TRADE_FIELDS 2   // <Product>&<Amount>
 
 
 typedef struct {

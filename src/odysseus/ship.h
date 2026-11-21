@@ -39,9 +39,8 @@ typedef struct {
     Map stMap;  // the islands the ship knows, Aeaea first
     char *psObjectPath;
     int nDelivered;
+    int *pnStop;     // the CTRL+C flag of main
 } Ship;
-
-extern int gnStop;
 
 void initShip(Ship *pstShip, OdysseusConfig *pstConfig);
 void executeCommand(Ship *pstShip, Command *pstCommand);

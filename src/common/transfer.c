@@ -62,7 +62,7 @@ static int getMd5(char *psPath, char *sMd5) {
         waitpid(nPid, NULL, 0);
         sMd5[nRead] = '\0';
 
-        if (nRead != MD5_LENGTH)
+        if (MD5_LENGTH != nRead)
             return -1;
         return 0;
     }
@@ -159,7 +159,7 @@ char *receiveFile(int nFd, Frame *pstHeader, char *psKind, char *psFolder) {
     int nReceived = 0;
     int i = 0;
 
-    // im sorry for all these ifs, but they are checks to ensure the data is correct, explained here:
+    // The header is refused when:
         //   - it's not a HEADER frame (0x20)
         //   - our folder doesn't exist and can't be created
         //   - it doesn't have the 4 fields Kind&FileName&FileSize&MD5

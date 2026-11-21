@@ -69,6 +69,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
     initShip(&stShip, &stConfig);
+    stShip.pnStop = &gnStop;
     if (-1 == loadState(&stShip)) {
         printError("Error: could not recover the saved state.\n");
         freeShip(&stShip);

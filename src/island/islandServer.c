@@ -194,23 +194,22 @@ static char *trade(Client *pstShip, Frame *pstFrame, char *psAnswer) {
     IslandServer *pstIsland = islandOf(pstShip);
     IslandConfig *pstConfig = pstIsland->pstConfig;
     Product *pstProduct = NULL;
-    char *psAmount = strchr(pstFrame->sData, '&');
+    char *apsFields[TRADE_FIELDS];
     char *psLog = NULL;
     char *psVerb = "sold";
     int nAmount = 0;
     int nDelta = 0;
     int i = 0;
 
-    if (NULL == psAmount) {
+    if (TRADE_FIELDS != splitFields(pstFrame->sData, apsFields, TRADE_FIELDS)) {
         return NACK_INVALID_DATA;
     }
-    *psAmount = '\0';
-    nAmount = toAmount(psAmount + 1);
+    nAmount = toAmount(apsFields[1]);
     if (-1 == nAmount) {
         return "INVALID_AMOUNT";
     }
 
-    while (i < pstConfig->nNumProducts && 0 != strcasecmp(pstConfig->pstProducts[i].sName, pstFrame->sData)) {
+    while (i < pstConfig->nNumProducts && 0 != strcasecmp(pstConfig->pstProducts[i].sName, apsFields[0])) {
         i++;
     }
     if (i == pstConfig->nNumProducts) {

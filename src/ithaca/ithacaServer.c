@@ -227,9 +227,11 @@ static Voyage* acceptVoyage(IthacaServer *pstIthaca, Client *pstClient, Frame *p
                 0 == strcmp(pstConfig->pstVoyages[i].psHolder, pstClient->psName))
             psReason = "ALREADY_HAS_VOYAGE";
     }
+    if (NULL == psReason && nId > pstConfig->nNumVoyages)
+        psReason = "VOYAGE_NOT_AVAILABLE";
     if (NULL == psReason) {
         pstVoyage = &pstConfig->pstVoyages[nId - 1];
-        if (nId > pstConfig->nNumVoyages || VOYAGE_AVAILABLE != pstVoyage->nState)
+        if (VOYAGE_AVAILABLE != pstVoyage->nState)
             psReason = "VOYAGE_NOT_AVAILABLE";
         else if (0 == objectExists(pstVoyage->psPath))
             psReason = "OBJECT_NOT_FOUND";

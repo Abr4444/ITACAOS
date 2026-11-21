@@ -236,6 +236,22 @@ void saveState(Ship *pstShip) {
 }
 
 /************************************************
+ * @Name: deleteState
+ * @Def: Deletes STATE_FILE: a ship lost at sea starts again with the
+ *       money and provisions of its configuration file.
+ * @Arg: In: pstShip = the ship
+ * @Ret: -
+ ************************************************/
+void deleteState(Ship *pstShip) {
+    char *psPath = NULL;
+
+    if (-1 != asprintf(&psPath, "%s/%s", pstShip->pstConfig->psFolder, STATE_FILE)) {
+        unlink(psPath);
+        free(psPath);
+    }
+}
+
+/************************************************
  * @Name: loadState
  * @Def: Recovers what saveState saved in a previous execution. With no
  *       STATE_FILE yet (first execution) the ship keeps the config values.

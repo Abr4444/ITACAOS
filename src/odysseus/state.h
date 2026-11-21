@@ -15,5 +15,6 @@
 
 int loadState(Ship *pstShip);
 void saveState(Ship *pstShip);
+void deleteState(Ship *pstShip);
 
 #endif

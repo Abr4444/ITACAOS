@@ -41,8 +41,9 @@ static int canDeliver(Ship *pstShip) {
 }
 /************************************************
  * @Name: receiveStamped
- * @Def: SIGNED: receives the stamped image. It has the same name, so it
- *       replaces the original one on board.
+ * @Def: SIGNED: receives the stamped image (signed_<name>) and only then
+ *       renames it over the original, so a failed transfer keeps the
+ *       original on board and DELIVER can be tried again.
  * @Arg: In/Out: pstShip = the ship
  *       In: pstHeader = the SIGNED header already received
  * @Ret: -
@@ -52,8 +53,8 @@ static void receiveStamped(Ship *pstShip, Frame *pstHeader) {
 
     if (NULL == psPath)
         return;
-    free(pstShip->psObjectPath);
-    pstShip->psObjectPath = psPath;
+    rename(psPath, pstShip->psObjectPath);
+    free(psPath);
     printString("\nStamped object received.\n");
 }
 /************************************************

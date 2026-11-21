@@ -356,7 +356,7 @@ static char *stampObject(Client *pstShip, char *psReceived) {
             printString(psMessage);
             free(psMessage);
         }
-        if (0 == sendFile(pstShip->nFd, "SIGNED", psSigned, fileNameOf(psReceived), FLAGS_OK))
+        if (0 == sendFile(pstShip->nFd, "SIGNED", psSigned, fileNameOf(psSigned), FLAGS_OK))
             printString(">>> Transfer completed.\n");
         else
             psReason = "SIGNED_FAILED";

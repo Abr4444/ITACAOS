@@ -191,7 +191,10 @@ void runLine(Ship *pstShip, char *psLine) {
     switch (parseCommand(psLine, &stCommand)) {
         case PARSE_OK:
             executeCommand(pstShip, &stCommand);
-            saveState(pstShip);
+            if (SHIP_LOST == pstShip->nState)
+                deleteState(pstShip);
+            else
+                saveState(pstShip);
             break;
         case PARSE_BAD_SYNTAX:
             printString(stCommand.psUsage);

@@ -247,6 +247,16 @@ void sail(Ship *pstShip, char *psName) {
     KnownIsland *pstIsland = findRoute(pstShip, psName);
     char *psMessage = NULL;
 
+    if (0 == strcasecmp(psName, ITHACA_NAME) && 1 == pstShip->nDelivered && 0 != strcmp(pstShip->psLocation, ITHACA_NAME)) {
+        if (-1 != asprintf(&psMessage, "Leaving %s...\nReturning directly to Ithaca...\n", pstShip->psLocation)) {
+            printString(psMessage);
+            free(psMessage);
+        }
+        leavePort(pstShip);
+        pstShip->psLocation = ITHACA_NAME;
+        pstShip->nState = SHIP_AT_ITHACA;
+        return;
+    }
     if(NULL == pstIsland){
         if (-1 != asprintf(&psMessage, "We can't sail to %s from here...\n", psName)) {
             printString(psMessage);

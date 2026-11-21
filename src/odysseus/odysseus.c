@@ -93,6 +93,10 @@ int main(int argc, char *argv[]) {
     }
     runTerminal(&stShip);
 
+    if (1 == isStranded(&stShip)) {
+        dropVoyage(&stShip);
+        deleteState(&stShip);
+    }
     leavePort(&stShip);
     freeShip(&stShip);
 

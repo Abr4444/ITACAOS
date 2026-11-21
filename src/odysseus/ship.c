@@ -116,6 +116,25 @@ void dropVoyage(Ship *pstShip) {
     freeVoyage(pstShip);
 }
 
+/* @Name: isStranded
+ * @Def: The ship has no food, cannot buy a map and does not know its
+ *       destination, so it has no way to continue.
+ * @Arg: In: pstShip = the ship
+ * @Ret: 1 if it is stranded, 0 otherwise. */
+int isStranded(Ship *pstShip) {
+    OdysseusConfig *pstConfig = pstShip->pstConfig;
+    int nTotal = 0;
+    int i = 0;
+
+    for (i = 0; i < pstConfig->nNumCargo; i++)
+        nTotal += pstConfig->pstCargo[i].nKg;
+    if (0 < nTotal || MAP_PRICE <= pstShip->nGold)
+        return 0;
+    if (0 != pstShip->nVoyageId && NULL != findIsland(&pstShip->stMap, pstShip->psDestination))
+        return 0;
+    return 1;
+}
+
 /* @Name: freeShip
  * @Def: Frees the voyage, the listed voyages and the map.
  * @Arg: In/Out: pstShip = the ship

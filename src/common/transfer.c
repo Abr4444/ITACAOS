@@ -33,7 +33,7 @@ static int readPipe(int nFd, char *pBuffer, int nWanted) {
  * @Arg: In: psPath = file to hash
  *       Out: sMd5 = the 32-character hash (MD5_LENGTH + 1 bytes)
  * @Ret: 0 on success, -1 on error. */
-static int getMd5(char *psPath, char *sMd5) {
+int getMd5(char *psPath, char *sMd5) {
     int anFd[2];
     int nPid = 0;
     int nRead = 0;
@@ -140,6 +140,22 @@ int sendFile(int nFd, char *psKind, char *psPath, char *psName, int nFlags) {
     return 0;
 }
 
+/* @Name: waitData
+ * @Def: Waits until the socket has something to read, at most
+ *       TRANSFER_TIMEOUT seconds.
+ * @Arg: In: nFd = socket of the connection
+ * @Ret: 1 if there is data, 0 if the time ran out, -1 on error. */
+static int waitData(int nFd) {
+    fd_set stSet;
+    struct timeval stTimeout;
+
+    FD_ZERO(&stSet);
+    FD_SET(nFd, &stSet);
+    stTimeout.tv_sec = TRANSFER_TIMEOUT;
+    stTimeout.tv_usec = 0;
+    return select(nFd + 1, &stSet, NULL, NULL, &stTimeout);
+}
+
 /* @Name: receiveFile
  * @Def: Receives a whole file checks it, answers READY, saves the DATA frames into
  *       psFolder/<FileName>, checks size and md5 and answers ACK.
@@ -183,7 +199,7 @@ char *receiveFile(int nFd, Frame *pstHeader, char *psKind, char *psFolder) {
     sendFrame(nFd, TYPE_FILE_READY, FLAGS_OK, "READY");
 
     nSize = atoi(apsFields[2]);
-    for (i = 0; i < (nSize + FRAME_DATA_SIZE - 1) / FRAME_DATA_SIZE && 0 == receiveFrame(nFd, &stFrame); i++) {
+    for (i = 0; i < (nSize + FRAME_DATA_SIZE - 1) / FRAME_DATA_SIZE && 1 == waitData(nFd) && 0 == receiveFrame(nFd, &stFrame); i++) {
         if (TYPE_FILE_DATA == stFrame.nType && stFrame.nLength == write(nFileFd, stFrame.sData, stFrame.nLength))
             nReceived += stFrame.nLength;
     }
@@ -200,6 +216,8 @@ char *receiveFile(int nFd, Frame *pstHeader, char *psKind, char *psFolder) {
     }
 
     sendFrame(nFd, TYPE_FILE_ACK, FLAGS_FAIL, psReason);
+    if (nSize != nReceived)
+        shutdown(nFd, SHUT_RDWR);
     unlink(psPath);
     free(psPath);
     return NULL;

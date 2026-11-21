@@ -294,6 +294,23 @@ static void sendObject(IthacaServer *pstIthaca, Client *pstClient, Voyage *pstVo
     }
 }
 
+/* @Name: isOwnObject
+ * @Def: Seals Ithaca's original with the destination's glyph over the
+ *       received image and compares the md5sum of both.
+ * @Arg: In: pstVoyage = the voyage
+ *       In: psPath = the received image (replaced by Ithaca's sealed copy)
+ * @Ret: 1 if it is the voyage's object, 0 otherwise. */
+static int isOwnObject(Voyage *pstVoyage, char *psPath) {
+    char sReceived[MD5_LENGTH + 1];
+    char sExpected[MD5_LENGTH + 1];
+
+    if (-1 == getMd5(psPath, sReceived) ||
+        SPHRAGIS_OK != SPHRAGIS_sign_with_glyph(pstVoyage->psDestination, pstVoyage->psPath, psPath) ||
+        -1 == getMd5(psPath, sExpected))
+        return 0;
+    return 0 == strcmp(sReceived, sExpected);
+}
+
 /* @Name: checkClaim
  * @Def: Receives the stamped image of a CLAIM and checks that it is the
  *       voyage's object with the glyph of its destination. The image is deleted afterwards.
@@ -321,6 +338,8 @@ static char *checkClaim(Client *pstClient, Voyage *pstVoyage, char *psFolder) {
         psReason = "WRONG_OBJECT";
     else if (1 != SPHRAGIS_has_glyph(pstVoyage->psDestination, psPath))
         psReason = "GLYPH_NOT_FOUND";
+    else if (0 == isOwnObject(pstVoyage, psPath))
+        psReason = "WRONG_OBJECT";
 
     unlink(psPath);
     free(psPath);

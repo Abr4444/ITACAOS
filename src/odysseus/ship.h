@@ -48,5 +48,6 @@ void runLine(Ship *pstShip, char *psLine);
 void closeConnection(Ship *pstShip);
 void freeShip(Ship *pstShip);
 void dropVoyage(Ship *pstShip);
+int isStranded(Ship *pstShip);
 
 #endif

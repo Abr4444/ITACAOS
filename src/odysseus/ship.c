@@ -117,7 +117,7 @@ void dropVoyage(Ship *pstShip) {
 }
 
 /* @Name: isStranded
- * @Def: The ship has no food, cannot buy a map and does not know its
+ * @Def: The ship has no food, no gold and does not know its
  *       destination, so it has no way to continue.
  * @Arg: In: pstShip = the ship
  * @Ret: 1 if it is stranded, 0 otherwise. */
@@ -128,7 +128,7 @@ int isStranded(Ship *pstShip) {
 
     for (i = 0; i < pstConfig->nNumCargo; i++)
         nTotal += pstConfig->pstCargo[i].nKg;
-    if (0 < nTotal || MAP_PRICE <= pstShip->nGold)
+    if (0 < nTotal || 0 < pstShip->nGold)
         return 0;
     if (0 != pstShip->nVoyageId && NULL != findIsland(&pstShip->stMap, pstShip->psDestination))
         return 0;

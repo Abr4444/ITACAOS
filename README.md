@@ -10,18 +10,24 @@ make tar      # packs the delivery: G18_F3.tar
 
 ## Execute
 
-Ithaca and Scheria use 172.16.214.21, Aeaea uses 172.16.214.20
+Montserrat is 172.16.214.21, Matagalls 172.16.214.20 and Puigpedros 172.16.214.18.
 Change the IP and port in the config files to run them elsewhere
 
 ```bash
 # Montserrat
 ./ithaca data/configs/ithaca.dat data/voyages.dat
+./island data/configs/thrinacia.dat data/island_stock/Thrinacia.db
+./odysseus data/configs/odysseus.dat      # Polyphemus
+./odysseus data/configs/eumaeus.dat
 # Matagalls
 ./island data/configs/island.dat data/island_stock/Aeaea.db
-# Montserrat (destination island of the Scheria voyages)
+./island data/configs/aeolia.dat data/island_stock/Aeolia.db
+./odysseus data/configs/telemachus.dat
+# Puigpedros
 ./island data/configs/scheria.dat data/island_stock/Scheria.db
-# Montserrat
-./odysseus data/configs/odysseus.dat
+./island data/configs/ogygia.dat data/island_stock/Ogygia.db
+./island data/configs/ismarus.dat data/island_stock/Ismarus.db
+./odysseus data/configs/penelope.dat
 ```
 
 Every process ends with CTRL+C.

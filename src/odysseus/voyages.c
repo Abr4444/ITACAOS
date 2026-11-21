@@ -6,6 +6,7 @@
 
 #define _GNU_SOURCE
 #include "voyages.h"
+#include "sailing.h"
 
 /************************************************
  * @Name: lostIthaca
@@ -14,7 +15,7 @@
  * @Arg: In/Out: pstShip = the ship
  * @Ret: -
  ************************************************/
-static void lostIthaca(Ship *pstShip) {
+void lostIthaca(Ship *pstShip) {
     printString("Error: lost the connection with Ithaca.\n");
     closeConnection(pstShip);
     pstShip->nState = SHIP_AT_ITHACA;
@@ -51,8 +52,27 @@ static int canAskForVoyage(Ship *pstShip) {
     }
     return 1;
 }
+/************************************************
+ * @Name: returnHome
+ * @Def: With the stamped object on board, the ship leaves the island and
+ *       goes straight back to Ithaca's harbor, without sailing any route.
+ * @Arg: In/Out: pstShip = the ship
+ * @Ret: -
+ ************************************************/
+static void returnHome(Ship *pstShip) {
+    char *psMessage = NULL;
+
+    if (-1 != asprintf(&psMessage, "Leaving %s...\nReturning directly to Ithaca...\n", pstShip->psLocation)) {
+        printString(psMessage);
+        free(psMessage);
+    }
+    leavePort(pstShip);
+    pstShip->psLocation = ITHACA_NAME;
+    pstShip->nState = SHIP_AT_ITHACA;
+}
 /* @Name: connectIthaca
  * @Def: CONNECT ITHACA: connects and identifies with the ship's name.
+ *       From an island it is only possible after the delivery.
  * @Arg: In/Out: pstShip = the ship
  * @Ret: - */
 void connectIthaca(Ship *pstShip) {
@@ -64,10 +84,12 @@ void connectIthaca(Ship *pstShip) {
         printString("You are already connected to Ithaca.\n");
         return;
     }
-    if (SHIP_AT_ITHACA != pstShip->nState) {
-        printString("You can only connect to Ithaca from its harbor.\n");
+    if (SHIP_AT_ITHACA != pstShip->nState && 0 == pstShip->nDelivered) {
+        printString("You can only connect to Ithaca from its harbor, or after delivering an object.\n");
         return;
     }
+    if (SHIP_AT_ITHACA != pstShip->nState)
+        returnHome(pstShip);
 
     pstShip->nFd = openClientConn(pstConfig->psIthacaIp, pstConfig->nIthacaPort);
     if (-1 == pstShip->nFd) {

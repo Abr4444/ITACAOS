@@ -9,7 +9,12 @@
 
 #include "ship.h"
 #include "market.h"
+#include "voyages.h"
+
+#define CLAIM_FIELDS 2 //Ok&Reward
 
 void deliver(Ship *pstShip);
+
+void claim(Ship* pstShip);
 
 #endif

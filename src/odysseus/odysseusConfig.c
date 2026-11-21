@@ -96,31 +96,18 @@ static void freeCargo(OdysseusConfig *pstConfig) {
     pstConfig->nNumCargo = 0;
 }
 /************************************************
- * @Name: loadOdysseusState
- * @Def: Recovers the gold and cargo saved by a previous execution, which
- *       replace the ones of odysseus.dat. With no STATE_FILE yet (first
- *       execution) the config values are kept.
- * @Arg: In/Out: pstConfig = the loaded configuration
- * @Ret: 0 on success or if there was no saved state, -1 on error.
+ * @Name: readOdysseusStock
+ * @Def: Reads the gold and cargo saved in the state file, which replace
+ *       the ones of odysseus.dat.
+ * @Arg: In: nFd = state file positioned at the gold line
+ *       In/Out: pstConfig = the loaded configuration
+ * @Ret: 0 on success, -1 if memory runs out.
  ************************************************/
-int loadOdysseusState(OdysseusConfig *pstConfig) {
-
-    char *psPath = NULL;
-    int nFd = -1;
-    int nResult = 0;
-
-    if (-1 != asprintf(&psPath, "%s/%s", pstConfig->psFolder, STATE_FILE)) {
-        nFd = open(psPath, O_RDONLY);
-        free(psPath);
-    }
-    if (-1 == nFd)
-        return 0;
+int readOdysseusStock(int nFd, OdysseusConfig *pstConfig) {
     freeCargo(pstConfig);
-    if (-1 == readStock(nFd, pstConfig))
-        nResult = -1;
-    close(nFd);
-    return nResult;
+    return readStock(nFd, pstConfig);
 }
+
 /************************************************
  * @Name: writeText
  * @Def: Writes a string to a file.
@@ -128,31 +115,21 @@ int loadOdysseusState(OdysseusConfig *pstConfig) {
  *       In: psText = string to write
  * @Ret: -
  ************************************************/
-static void writeText(int nFd, char *psText) {
+void writeText(int nFd, char *psText) {
     write(nFd, psText, strlen(psText));
 }
 
 /************************************************
- * @Name: saveOdysseusState
- * @Def: Saves the gold and cargo in STATE_FILE, inside the ship's folder,
- *       with the same format as the end of odysseus.dat.
- * @Arg: In: pstConfig = the configuration with the cargo
+ * @Name: writeOdyddeusStock
+ * @Def: Writes the gold and cargo with the same format as the end of odysseus.dat
+ * @Arg: In: nFd = the state file
+ *       In: pstConfig = the configuration with the cargo
  *       In: nGold = the gold of the ship
  * @Ret: -
  ************************************************/
-void saveOdysseusState(OdysseusConfig *pstConfig, int nGold) {
+void writeOdysseusStock(int nFd, OdysseusConfig *pstConfig, int nGold) {
     char *psText = NULL;
-    int nFd = -1;
 
-    mkdir(pstConfig->psFolder, 0755); //fails harmlessly if it already exists
-    if (-1 != asprintf(&psText, "%s/%s", pstConfig->psFolder, STATE_FILE)) {
-        nFd = open(psText, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-        free(psText);
-    }
-    if (-1 == nFd) {
-        printError("Error: could not save the state of the ship.\n");
-        return;
-    }
     if (-1 != asprintf(&psText, "%d\n%d\n", nGold, pstConfig->nNumCargo)) {
         writeText(nFd, psText);
         free(psText);
@@ -163,7 +140,6 @@ void saveOdysseusState(OdysseusConfig *pstConfig, int nGold) {
             free(psText);
         }
     }
-    close(nFd);
 }
 /************************************************
  * @Name: freeOdysseusConfig

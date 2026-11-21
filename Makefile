@@ -26,7 +26,7 @@ SHIP_H = $(SRC)/odysseus/ship.h $(SRC)/odysseus/map.h $(SRC)/odysseus/odysseusCo
 # Object files of each executable
 ITHACA_OBJ = $(OBJ)/ithaca.o $(OBJ)/ithacaServer.o $(OBJ)/ithacaConfig.o $(OBJ)/server.o $(OBJ)/frame.o $(OBJ)/transfer.o $(OBJ)/socket.o $(OBJ)/io.o lib/sphragis.o
 ISLAND_OBJ = $(OBJ)/island.o $(OBJ)/islandServer.o $(OBJ)/islandConfig.o $(OBJ)/server.o $(OBJ)/frame.o $(OBJ)/transfer.o $(OBJ)/socket.o $(OBJ)/io.o lib/sphragis.o
-ODYSSEUS_OBJ = $(OBJ)/odysseus.o $(OBJ)/ship.o $(OBJ)/map.o $(OBJ)/voyages.o $(OBJ)/sailing.o $(OBJ)/market.o $(OBJ)/delivery.o \
+ODYSSEUS_OBJ = $(OBJ)/odysseus.o $(OBJ)/ship.o $(OBJ)/map.o $(OBJ)/voyages.o $(OBJ)/sailing.o $(OBJ)/market.o $(OBJ)/delivery.o $(OBJ)/state.o \
                $(OBJ)/odysseusConfig.o $(OBJ)/terminal.o $(OBJ)/frame.o $(OBJ)/transfer.o $(OBJ)/socket.o $(OBJ)/io.o lib/sphragis.o
 
 .PHONY: all clean tar
@@ -106,11 +106,11 @@ $(OBJ)/islandConfig.o: $(SRC)/island/islandConfig.c $(SRC)/island/islandConfig.h
 # Odysseus
 #################################################
 
-$(OBJ)/odysseus.o: $(SRC)/odysseus/odysseus.c $(SRC)/odysseus/sailing.h $(SHIP_H)
+$(OBJ)/odysseus.o: $(SRC)/odysseus/odysseus.c $(SRC)/odysseus/sailing.h $(SRC)/odysseus/state.h $(SHIP_H)
 	mkdir -p $(OBJ)
 	$(CC) $(CFLAGS) -c $(SRC)/odysseus/odysseus.c -o $(OBJ)/odysseus.o
 
-$(OBJ)/ship.o: $(SRC)/odysseus/ship.c $(SRC)/odysseus/voyages.h $(SRC)/odysseus/sailing.h $(SRC)/odysseus/market.h $(SRC)/odysseus/delivery.h $(SHIP_H)
+$(OBJ)/ship.o: $(SRC)/odysseus/ship.c $(SRC)/odysseus/voyages.h $(SRC)/odysseus/sailing.h $(SRC)/odysseus/market.h $(SRC)/odysseus/delivery.h $(SRC)/odysseus/state.h $(SHIP_H)
 	mkdir -p $(OBJ)
 	$(CC) $(CFLAGS) -c $(SRC)/odysseus/ship.c -o $(OBJ)/ship.o
 
@@ -118,7 +118,7 @@ $(OBJ)/map.o: $(SRC)/odysseus/map.c $(SRC)/odysseus/map.h $(SRC)/common/io.h lib
 	mkdir -p $(OBJ)
 	$(CC) $(CFLAGS) -c $(SRC)/odysseus/map.c -o $(OBJ)/map.o
 
-$(OBJ)/voyages.o: $(SRC)/odysseus/voyages.c $(SRC)/odysseus/voyages.h $(SHIP_H)
+$(OBJ)/voyages.o: $(SRC)/odysseus/voyages.c $(SRC)/odysseus/voyages.h $(SRC)/odysseus/sailing.h $(SHIP_H)
 	mkdir -p $(OBJ)
 	$(CC) $(CFLAGS) -c $(SRC)/odysseus/voyages.c -o $(OBJ)/voyages.o
 
@@ -130,9 +130,13 @@ $(OBJ)/market.o: $(SRC)/odysseus/market.c $(SRC)/odysseus/market.h $(SHIP_H)
 	mkdir -p $(OBJ)
 	$(CC) $(CFLAGS) -c $(SRC)/odysseus/market.c -o $(OBJ)/market.o
 
-$(OBJ)/delivery.o: $(SRC)/odysseus/delivery.c $(SRC)/odysseus/delivery.h $(SRC)/odysseus/market.h $(SHIP_H)
+$(OBJ)/delivery.o: $(SRC)/odysseus/delivery.c $(SRC)/odysseus/delivery.h $(SRC)/odysseus/market.h $(SRC)/odysseus/voyages.h $(SHIP_H)
 	mkdir -p $(OBJ)
 	$(CC) $(CFLAGS) -c $(SRC)/odysseus/delivery.c -o $(OBJ)/delivery.o
+
+$(OBJ)/state.o: $(SRC)/odysseus/state.c $(SRC)/odysseus/state.h $(SHIP_H)
+	mkdir -p $(OBJ)
+	$(CC) $(CFLAGS) -c $(SRC)/odysseus/state.c -o $(OBJ)/state.o
 
 $(OBJ)/odysseusConfig.o: $(SRC)/odysseus/odysseusConfig.c $(SRC)/odysseus/odysseusConfig.h $(SRC)/common/io.h
 	mkdir -p $(OBJ)

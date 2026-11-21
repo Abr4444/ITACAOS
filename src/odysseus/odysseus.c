@@ -8,15 +8,16 @@
 #include "ship.h"
 #include "sailing.h"
 #include <signal.h>
+#include "state.h"
 
 int gnStop = 0;
 
 /************************************************
  * @Name: handleInterrupt
  * @Def: SIGINT (CTRL+C) handler: raises the stop flag and closes stdin.
- *       signal() makes the kernel restart a read() interrupted by CTRL+C,
- *       so closing stdin is what makes that read() fail and the
- *       terminal loop end.
+ *       main installs it without SA_RESTART, so a read() blocked on a
+ *       socket fails at once. Closing stdin also ends a terminal read()
+ *       that starts right after CTRL+C.
  * @Arg: In: nSignal = signal received (unused)
  * @Ret: -
  ************************************************/
@@ -58,6 +59,7 @@ int main(int argc, char *argv[]) {
     OdysseusConfig stConfig;
     Ship stShip;
     char *psMessage = NULL;
+    struct sigaction stAction;
 
     if (2 != argc) {
         printError("Usage: ./odysseus <config.dat>\n");
@@ -66,12 +68,19 @@ int main(int argc, char *argv[]) {
     if (-1 == loadOdysseusConfig(argv[1], &stConfig)) {
         return 1;
     }
-    if (-1 == loadOdysseusState(&stConfig)) {
+    initShip(&stShip, &stConfig);
+    if (-1 == loadState(&stShip)) {
         printError("Error: could not recover the saved state.\n");
+        freeShip(&stShip);
         freeOdysseusConfig(&stConfig);
         return 1;
     }
-    if (SIG_ERR == signal(SIGINT, handleInterrupt) || SIG_ERR == signal(SIGPIPE, SIG_IGN)) {
+    memset(&stAction, 0, sizeof(stAction));
+    stAction.sa_handler = handleInterrupt;
+    sigemptyset(&stAction.sa_mask);
+    stAction.sa_flags = 0;
+    if (-1 == sigaction(SIGINT, &stAction, NULL) || SIG_ERR == signal(SIGPIPE, SIG_IGN)) {
+        freeShip(&stShip);
         printError("Error: could not install the CTRL+C handler.\n");
         freeOdysseusConfig(&stConfig);
         return 1;
@@ -81,7 +90,6 @@ int main(int argc, char *argv[]) {
         printString(psMessage);
         free(psMessage);
     }
-    initShip(&stShip, &stConfig);
     runTerminal(&stShip);
 
     leavePort(&stShip);

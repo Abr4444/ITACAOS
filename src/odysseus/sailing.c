@@ -25,6 +25,8 @@ static KnownIsland *findRoute(Ship *pstShip, char *psName) {
         return NULL;
     }
     pstFrom = findIsland(&pstShip->stMap, pstShip->psLocation);
+    if (SHIP_AT_SEA == pstShip->nState && NULL != pstFrom && 0 == strcasecmp(pstFrom->psName, psName))
+        return pstFrom;
     for (int i = 0; NULL != pstFrom && i < pstFrom->nNumRoutes; i++) {
         if (0 == strcasecmp(pstFrom->ppsRoutes[i], psName))
             return findIsland(&pstShip->stMap, psName);
@@ -73,6 +75,7 @@ static int eatWhileWaiting(Ship* pstShip) {
             free(psMessage);
         }
         pstShip->nState = SHIP_LOST;
+        dropVoyage(pstShip);
         return WAIT_FAILED;
     }
     if (-1 != asprintf(&psMessage, "\n>>> The crew consumes another ration.\nProvisions remaining: %d kg\n%s", nLeft, PROMPT)) {

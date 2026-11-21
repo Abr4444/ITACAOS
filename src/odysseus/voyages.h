@@ -16,5 +16,6 @@ void connectIthaca(Ship *pstShip);
 void listVoyages(Ship *pstShip);
 void acceptVoyage(Ship *pstShip, int nId);
 void forgetListedVoyages(Ship *pstShip);
+void lostIthaca(Ship *pstShip);
 
 #endif

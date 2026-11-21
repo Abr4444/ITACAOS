@@ -27,8 +27,8 @@ Change the IP and port in the config files to run them elsewhere
 Every process ends with CTRL+C.
 
 Each process stores its files in the folder of the 2nd line of its config file
-(created if it does not exist). Odysseus saves its gold and cargo in
-`<its folder>/state.dat` and loads them when it starts again; each island saves
+(created if it does not exist). Odysseus saves its gold, cargo, active voyage (with its image), discovered map and location in
+`<its folder>/state.dat` after every command and loads them when it starts again (if it was at an island, it starts at sea next to it, not connected, and SAIL to that island reconnects); each island saves
 its stock in its `.db` file.
 
 ## Execute with valgrind

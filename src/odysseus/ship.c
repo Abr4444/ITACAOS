@@ -10,6 +10,7 @@
 #include "sailing.h"
 #include "market.h"
 #include "delivery.h"
+#include "state.h"
 
 /* @Name: showStatus
  * @Def: STATUS: prints gold, cargo, provisions, voyage and location.
@@ -88,13 +89,12 @@ void initShip(Ship *pstShip, OdysseusConfig *pstConfig) {
         printString("Error: not enough memory\n");
 }
 
-/* @Name: dropVoyage
- * @Def: Forgets the current voyage and deletes its object from the ship's folder.
+/* @Name: freeVoyage
+ * @Def: Frees the current voyage and forgets it. Its object stays in the
+ *       ship's folder, so the next execution can go on with the voyage.
  * @Arg: In/Out: pstShip = the ship
  * @Ret: - */
-void dropVoyage(Ship *pstShip) {
-    if (NULL != pstShip->psObjectPath)
-        unlink(pstShip->psObjectPath);
+static void freeVoyage(Ship *pstShip) {
     free(pstShip->psObjectPath);
     free(pstShip->psObject);
     free(pstShip->psDestination);
@@ -106,12 +106,22 @@ void dropVoyage(Ship *pstShip) {
     pstShip->nDelivered = 0;
 }
 
+/* @Name: dropVoyage
+ * @Def: Ends the current voyage: deletes its object from the ship's folder and forgets it.
+ * @Arg: In/Out: pstShip = the ship
+ * @Ret: - */
+void dropVoyage(Ship *pstShip) {
+    if (NULL != pstShip->psObjectPath)
+        unlink(pstShip->psObjectPath);
+    freeVoyage(pstShip);
+}
+
 /* @Name: freeShip
- * @Def: Frees the voyage (deleting its object), the listed voyages and the map.
+ * @Def: Frees the voyage, the listed voyages and the map.
  * @Arg: In/Out: pstShip = the ship
  * @Ret: - */
 void freeShip(Ship *pstShip) {
-    dropVoyage(pstShip);
+    freeVoyage(pstShip);
     forgetListedVoyages(pstShip);
     freeMap(&pstShip->stMap);
 }
@@ -160,6 +170,9 @@ void executeCommand(Ship *pstShip, Command *pstCommand) {
         case CMD_DELIVER:
             deliver(pstShip);
             break;
+        case CMD_CLAIM:
+            claim(pstShip);
+            break;
         default:
             // Implemented by the next steps of the phase
             printString("Command OK\n");
@@ -178,7 +191,7 @@ void runLine(Ship *pstShip, char *psLine) {
     switch (parseCommand(psLine, &stCommand)) {
         case PARSE_OK:
             executeCommand(pstShip, &stCommand);
-            saveOdysseusState(pstShip->pstConfig, pstShip->nGold);
+            saveState(pstShip);
             break;
         case PARSE_BAD_SYNTAX:
             printString(stCommand.psUsage);

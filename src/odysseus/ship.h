@@ -41,6 +41,8 @@ typedef struct {
     int nDelivered;
 } Ship;
 
+extern int gnStop;
+
 void initShip(Ship *pstShip, OdysseusConfig *pstConfig);
 void executeCommand(Ship *pstShip, Command *pstCommand);
 void runLine(Ship *pstShip, char *psLine);

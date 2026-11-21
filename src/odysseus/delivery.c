@@ -85,6 +85,10 @@ void deliver(Ship *pstShip) {
         printString(psMessage);
         free(psMessage);
     }
+    if (0 != nTransfer && 1 == gnStop) {
+        closeConnection(pstShip);
+        return;
+    }
     if (-1 == nSent || -1 == receiveFrame(pstShip->nFd, &stFrame)) {
         lostIsland(pstShip);
         return;
@@ -108,4 +112,81 @@ void deliver(Ship *pstShip) {
         printString(psMessage);
         free(psMessage);
     }
+}
+/************************************************
+ * @Name: canClaim
+ * @Def: CLAIM needs the connection with Ithaca and a delivered object
+ *       still on board.
+ * @Arg: In: pstShip = the ship
+ * @Ret: 1 if it can claim, 0 otherwise (the reason is printed).
+ ************************************************/
+static int canClaim(Ship *pstShip) {
+    if (SHIP_CONNECTED_ITHACA != pstShip->nState) {
+        printString("You must be connected to Ithaca first.\n");
+        return 0;
+    }
+    if (0 == pstShip->nVoyageId || 0 == pstShip->nDelivered) {
+        printString("You have no delivered object to claim.\n");
+        return 0;
+    }
+    if (0 != access(pstShip->psObjectPath, R_OK)) {
+        printString("Error: the stamped object is no longer on board.\n");
+        return 0;
+    }
+    return 1;
+}
+
+/************************************************
+ * @Name: claim
+ * @Def: CLAIM: sends the stamped image to Ithaca, which checks it and pays the reward.
+ * @Arg: In/Out: pstShip = the ship
+ * @Ret: -
+ ************************************************/
+void claim(Ship *pstShip) {
+    Frame stFrame;
+    char *apsFields[CLAIM_FIELDS];
+    char *psMessage = NULL;
+    int nSent = -1;
+    int nTransfer = -1;
+
+    if (0 == canClaim(pstShip))
+        return;
+    if (-1 != asprintf(&psMessage, "%d", pstShip->nVoyageId)) {
+        nSent = sendFrame(pstShip->nFd, TYPE_CLAIM, FLAGS_REQUEST, psMessage);
+        free(psMessage);
+    }
+    if (-1 != asprintf(&psMessage, "Presenting the stamped %s...\n", pstShip->psObject)) {
+        printString(psMessage);
+        free(psMessage);
+    }
+    if (-1 != nSent)
+        nTransfer = sendFile(pstShip->nFd, "CLAIM", pstShip->psObjectPath, fileNameOf(pstShip->psObjectPath), FLAGS_REQUEST);
+    if (0 == nTransfer)
+        printString("\nObject transferred correctly.\n");
+    if (0 != nTransfer && 1 == gnStop) {
+        closeConnection(pstShip);
+        return;
+    }
+    if (-1 == nSent || -1 == receiveFrame(pstShip->nFd, &stFrame)) {
+        lostIthaca(pstShip);
+        return;
+    }
+    if (TYPE_CLAIM != stFrame.nType || FLAGS_OK != stFrame.nFlags) {
+        if (-1 != asprintf(&psMessage, "Ithaca rejected the claim: %s\n", stFrame.sData)) {
+            printString(psMessage);
+            free(psMessage);
+        }
+        return;
+    }
+    if (CLAIM_FIELDS != splitFields(stFrame.sData, apsFields, CLAIM_FIELDS)) {
+        printString("Error: Ithaca sent a wrong answer.\n");
+        return;
+    }
+    pstShip->nGold += atoi(apsFields[1]);
+    if (-1 != asprintf(&psMessage, "Glyph of %s verified.\n\nVoyage %d completed.\nReward received: %s gold.\n",
+                       pstShip->psDestination, pstShip->nVoyageId, apsFields[1])) {
+        printString(psMessage);
+        free(psMessage);
+    }
+    dropVoyage(pstShip);
 }
